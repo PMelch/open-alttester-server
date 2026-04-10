@@ -70,9 +70,9 @@ describe("InspectorService", () => {
 
     it("includes provided parameters in the command", () => {
       const { ws, sent } = makeMockWs();
-      svc.send(ws, "findObjects", { by: "PATH", value: "//*" }, 1000).catch(() => {});
+      svc.send(ws, "findObjects", { path: "//*", cameraBy: "NAME", cameraPath: "//", enabled: true }, 1000).catch(() => {});
       const cmd = JSON.parse(sent[0]);
-      expect(cmd.parameters).toEqual({ by: "PATH", value: "//*" });
+      expect(cmd.parameters).toEqual({ path: "//*", cameraBy: "NAME", cameraPath: "//", enabled: true });
     });
 
     it("uses unique messageIds for concurrent requests", () => {

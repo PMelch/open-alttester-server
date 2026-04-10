@@ -31,10 +31,10 @@ export async function handleInspectorRequest(
   try {
     if (isObjects) {
       const objects = await inspector.send(appWs, "findObjects", {
-        by: "PATH",
-        value: "//*",
+        // BaseFindObjectsParams fields (pre-processed by the driver, not By+value raw):
+        path: "//*",        // SetPath(By.PATH, "//*") = "//*"
         cameraBy: "NAME",
-        cameraValue: "//",  // "//" is the AltOldFindObjectsCommand sentinel for "no camera"
+        cameraPath: "//",   // SetPath(By.NAME, "") = "//" — sentinel: skip camera lookup
         enabled: true,
       }, 10_000); // large scenes can take longer to serialise
       return new Response(JSON.stringify({ objects }), {

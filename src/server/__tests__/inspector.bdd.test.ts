@@ -130,10 +130,13 @@ describe("Feature: Inspector", () => {
 
       const cmd = received.find(m => m.commandName === "findObjects");
       expect(cmd).toBeDefined();
-      expect(cmd!.parameters.value).toBe("//*");
-      // cameraValue must be "//" — the AltOldFindObjectsCommand sentinel for "no camera".
-      // Sending "" or null causes cameraPath to be null in Unity, triggering NullReferenceException.
-      expect(cmd!.parameters.cameraValue).toBe("//");
+      // BaseFindObjectsParams has a "path" field, not "by"+"value".
+      // The driver pre-processes By.PATH+"//*" → path="//*" before sending.
+      expect(cmd!.parameters.path).toBe("//*");
+      // cameraPath="//" is the AltOldFindObjectsCommand sentinel: skip camera lookup.
+      // Sending cameraPath=null (by omitting or using wrong field name) causes NullReferenceException
+      // at AltOldFindObjectsCommand.cs:33 where it calls cameraPath.Equals("//").
+      expect(cmd!.parameters.cameraPath).toBe("//");
 
       app.close();
     });
