@@ -16,6 +16,9 @@ export class DashboardFeed {
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
   startHeartbeat(intervalMs = 20_000): void {
+    if (this.heartbeatTimer !== null) {
+      clearInterval(this.heartbeatTimer);
+    }
     this.heartbeatTimer = setInterval(() => {
       this.emitRaw(": keepalive\n\n");
     }, intervalMs);
@@ -32,7 +35,7 @@ export class DashboardFeed {
     const bytes = this.encoder.encode(raw);
     for (const ctrl of this.clients) {
       try {
-        ctrl.enqueue(bytes);
+        ctrl.enqueue(bytes.slice());
       } catch {
         this.clients.delete(ctrl);
       }

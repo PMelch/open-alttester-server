@@ -44,7 +44,7 @@ export async function createAltTesterServer(
 ): Promise<AltTesterServer> {
   const registry = new ConnectionRegistry();
   const feed = new DashboardFeed();
-  feed.startHeartbeat(opts.heartbeatMs ?? 20_000);
+  feed.startHeartbeat(opts.heartbeatMs);
   const startTime = Date.now();
 
   const server = Bun.serve<WsData>({
