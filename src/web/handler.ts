@@ -54,15 +54,7 @@ export class DashboardFeed {
   }
 
   emit(event: DashboardEvent): void {
-    const sseBlock = `event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`;
-    const bytes = this.encoder.encode(sseBlock);
-    for (const ctrl of this.clients) {
-      try {
-        ctrl.enqueue(bytes);
-      } catch {
-        this.clients.delete(ctrl);
-      }
-    }
+    this.emitRaw(`event: ${event.type}\ndata: ${JSON.stringify(event)}\n\n`);
   }
 
   subscriberCount(): number {
