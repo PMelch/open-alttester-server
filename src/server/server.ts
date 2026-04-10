@@ -53,7 +53,7 @@ export async function createAltTesterServer(
   const server = Bun.serve<WsData>({
     port: opts.port,
 
-    async fetch(req, server) {
+    fetch(req, server) {
       const url = new URL(req.url);
       const params = url.searchParams;
       const appName = params.get("appName") ?? "__default__";
@@ -72,15 +72,15 @@ export async function createAltTesterServer(
         if (upgraded) return undefined;
       }
 
-      // Dashboard HTTP routes
+      // Dashboard HTTP routes (sync — must stay sync so Bun streams the SSE body directly)
       const dashResponse = handleDashboardRequest(req, registry, feed, startTime);
       if (dashResponse) return dashResponse;
 
-      // Inspector HTTP routes
-      const inspectorResponse = await handleInspectorRequest(req, registry, inspector);
-      if (inspectorResponse) return inspectorResponse;
-
-      return new Response("Not found", { status: 404 });
+      // Inspector HTTP routes (async, but returned as a Promise — not async fetch — so Bun
+      // does not buffer other response bodies while awaiting this route)
+      return handleInspectorRequest(req, registry, inspector).then(
+        (r) => r ?? new Response("Not found", { status: 404 }),
+      );
     },
 
     websocket: {

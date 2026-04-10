@@ -148,7 +148,7 @@
 
     <div v-if="insp.currentScene" class="text-xs mb-1">
       <span class="text-slate-500">Current scene: </span>
-      <span class="text-sky-400 font-mono">{{ insp.currentSceneName }}</span>
+      <span class="text-sky-400 font-mono">{{ currentSceneName }}</span>
     </div>
     <div v-if="insp.scenes.length" class="text-xs mb-3">
       <span class="text-slate-500">Loaded: </span>
@@ -341,7 +341,10 @@ createApp({
 
     return {
       state, log, pairedCount, uptimeFormatted, isPaired,
-      insp: computed(() => ({ ...insp.value, currentSceneName: inspComputedScene.value })),
+      // insp is returned as a plain ref so Vue auto-unwraps it in the template and
+      // v-model writes back to the reactive object (a computed spread-copy would not).
+      insp,
+      currentSceneName: inspComputedScene,
       inspectScenes, inspectObjects, inspectRefresh,
     };
   }
