@@ -33,7 +33,9 @@ ws[s]://<host>:<port><path>?appName=<name>&platform=<p>&platformVersion=<v>&devi
 | `appId` | No | Optional secondary ID |
 
 - Default port: **13000** (override via `ALTSERVER_PORT` env var)
-- Default path: **`/`**
+- Unity app path: **`/altws/app`** (from `BaseCommunicationHandler` → `private readonly string path = "/altws/app"`)
+- Driver path: **`/altws`** (from `DriverWebSocketClient` hardcoded `"/altws"`, Python: `path="altws"`)
+- Live-update path: **`/altws/live-update/app`** (not required for server replacement)
 - Default `appName`: `__default__`
 - Scheme: `ws` (plain) or `wss` (TLS — requires non-GPL SDK build)
 

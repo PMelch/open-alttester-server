@@ -1,9 +1,10 @@
 ---
 id: TASK-1.3
 title: Implement AltTester WebSocket server core
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-04-10 05:31'
+updated_date: '2026-04-10 06:10'
 labels: []
 dependencies:
   - TASK-1.2
