@@ -1,10 +1,10 @@
 ---
 id: TASK-1.4
 title: Web dashboard — connection stats and monitoring
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-10 05:31'
-updated_date: '2026-04-10 05:32'
+updated_date: '2026-04-10 06:39'
 labels: []
 dependencies:
   - TASK-1.3

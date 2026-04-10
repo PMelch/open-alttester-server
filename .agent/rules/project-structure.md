@@ -4,8 +4,9 @@
 
 - **Runtime**: Bun (not Node.js directly)
 - **Language**: TypeScript (strict mode)
-- **No frontend framework** — plain HTML/JS/CSS served statically
-- **No bundler** — Bun serves TypeScript directly
+- **Frontend framework**: Vue 3 (for all web UI — dashboard and inspector)
+- **CSS framework**: Tailwind CSS
+- **Bundler**: Bun's built-in bundler (`Bun.build`) for the frontend; server-side TypeScript run directly by Bun
 
 ## Directory Layout
 

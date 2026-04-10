@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AltTester Server</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: '#1e2533',
+            base: '#0f1117',
+          }
+        }
+      }
+    }
+  </script>
+  <script type="importmap">
+    { "imports": { "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js" } }
+  </script>
+</head>
+<body class="bg-[#0f1117] text-slate-200 min-h-screen p-8 dark">
+
+<div id="app">
+  <header class="mb-6 flex items-center justify-between">
+    <h1 class="text-2xl font-semibold text-sky-400">AltTester Server</h1>
+    <span class="text-sm text-slate-500">Uptime: {{ uptimeFormatted }}</span>
+  </header>
+
+  <!-- Stats row -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-[#1e2533] rounded-lg p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Unity Apps</p>
+      <p class="text-3xl font-bold text-sky-400">{{ state.apps.length }}</p>
+    </div>
+    <div class="bg-[#1e2533] rounded-lg p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Test Drivers</p>
+      <p class="text-3xl font-bold text-sky-400">{{ state.drivers.length }}</p>
+    </div>
+    <div class="bg-[#1e2533] rounded-lg p-4">
+      <p class="text-xs uppercase tracking-wider text-slate-500 mb-1">Active Sessions</p>
+      <p class="text-3xl font-bold text-emerald-400">{{ pairedCount }}</p>
+    </div>
+  </div>
+
+  <!-- Tables -->
+  <div class="grid grid-cols-2 gap-4 mb-6">
+
+    <!-- Apps -->
+    <div class="bg-[#1e2533] rounded-lg p-4">
+      <h2 class="text-xs uppercase tracking-wider text-slate-500 mb-3">Connected Unity Apps</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-400">
+            <th class="pb-2 font-medium">App Name</th>
+            <th class="pb-2 font-medium">Platform</th>
+            <th class="pb-2 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="state.apps.length === 0">
+            <td colspan="3" class="text-slate-600 py-2">No apps connected</td>
+          </tr>
+          <tr v-for="app in state.apps" :key="app.appName" class="border-t border-slate-700/50">
+            <td class="py-2 font-mono text-slate-200">{{ app.appName }}</td>
+            <td class="py-2 text-slate-400">{{ app.platform }}</td>
+            <td class="py-2">
+              <span v-if="isPaired(app.appName)" class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-900/60 text-emerald-400">Paired</span>
+              <span v-else class="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-700 text-slate-400">Waiting</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Drivers -->
+    <div class="bg-[#1e2533] rounded-lg p-4">
+      <h2 class="text-xs uppercase tracking-wider text-slate-500 mb-3">Connected Test Drivers</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-slate-400">
+            <th class="pb-2 font-medium">Target App</th>
+            <th class="pb-2 font-medium">Driver Type</th>
+            <th class="pb-2 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-if="state.drivers.length === 0">
+            <td colspan="3" class="text-slate-600 py-2">No drivers connected</td>
+          </tr>
+          <tr v-for="d in state.drivers" :key="d.appName + d.deviceInstanceId" class="border-t border-slate-700/50">
+            <td class="py-2 font-mono text-slate-200">{{ d.appName }}</td>
+            <td class="py-2 text-slate-400">{{ d.driverType }}</td>
+            <td class="py-2">
+              <span v-if="d.paired" class="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-900/60 text-emerald-400">Paired</span>
+              <span v-else class="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-900/60 text-blue-400">Connecting</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Event log -->
+  <div class="bg-[#1e2533] rounded-lg p-4">
+    <h2 class="text-xs uppercase tracking-wider text-slate-500 mb-3">Event Log</h2>
+    <div class="font-mono text-xs text-slate-400 max-h-40 overflow-y-auto space-y-1">
+      <div v-if="log.length === 0" class="text-slate-600">No events yet</div>
+      <div v-for="(entry, i) in log" :key="i" :class="entry.cls">
+        <span class="text-slate-600">{{ entry.time }}</span> {{ entry.msg }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createApp, ref, computed, onMounted, onUnmounted } from 'vue';
+
+createApp({
+  setup() {
+    const state = ref({ apps: [], drivers: [], uptime: 0 });
+    const log = ref([]);
+    let es = null;
+    let uptimeInterval = null;
+
+    const pairedCount = computed(() =>
+      state.value.drivers.filter(d => d.paired).length
+    );
+
+    const uptimeFormatted = computed(() => {
+      const s = Math.floor(state.value.uptime);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${h}h ${m}m ${sec}s`;
+    });
+
+    function isPaired(appName) {
+      return state.value.drivers.some(d => d.appName === appName && d.paired);
+    }
+
+    function addLog(msg, cls = 'text-slate-400') {
+      const time = new Date().toLocaleTimeString();
+      log.value.unshift({ time, msg, cls });
+      if (log.value.length > 100) log.value.pop();
+    }
+
+    async function fetchState() {
+      try {
+        const r = await fetch('/dashboard/state');
+        state.value = await r.json();
+      } catch {}
+    }
+
+    onMounted(() => {
+      fetchState();
+
+      es = new EventSource('/dashboard/events');
+
+      es.addEventListener('appConnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`App connected: ${d.appName} (${d.platform})`, 'text-sky-400');
+        fetchState();
+      });
+
+      es.addEventListener('appDisconnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`App disconnected: ${d.appName}`, 'text-red-400');
+        fetchState();
+      });
+
+      es.addEventListener('driverConnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`Driver connected: ${d.driverType} → ${d.appName}`, 'text-emerald-400');
+        fetchState();
+      });
+
+      es.addEventListener('driverDisconnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`Driver disconnected from: ${d.appName}`, 'text-amber-400');
+        fetchState();
+      });
+
+      es.onerror = () => addLog('SSE connection lost — retrying…', 'text-red-500');
+
+      uptimeInterval = setInterval(() => {
+        fetchState();
+      }, 2000);
+    });
+
+    onUnmounted(() => {
+      es?.close();
+      clearInterval(uptimeInterval);
+    });
+
+    return { state, log, pairedCount, uptimeFormatted, isPaired };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

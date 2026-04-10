@@ -1,5 +1,6 @@
 import type { ServerWebSocket } from "bun";
 import { ConnectionRegistry, CloseCode, ClientRole, type WsConn } from "./registry";
+import { DashboardFeed, handleDashboardRequest } from "../web/handler";
 
 export interface AltTesterServerOptions {
   port: number;
@@ -8,6 +9,7 @@ export interface AltTesterServerOptions {
 export interface AltTesterServer {
   port: number;
   registry: ConnectionRegistry;
+  feed: DashboardFeed;
   stop(): void;
 }
 
@@ -39,6 +41,8 @@ export async function createAltTesterServer(
   opts: AltTesterServerOptions,
 ): Promise<AltTesterServer> {
   const registry = new ConnectionRegistry();
+  const feed = new DashboardFeed();
+  const startTime = Date.now();
 
   const server = Bun.serve<WsData>({
     port: opts.port,
@@ -51,8 +55,7 @@ export async function createAltTesterServer(
 
       // Path-based role distinction (from SDK source):
       //   /altws/app  → Unity SDK app (RuntimeWebSocketClient)
-      //   /altws      → test driver (Python, C# DriverWebSocketClient)
-      //   /           → HTTP dashboard (served in TASK-1.4)
+      //   /altws      → test driver (Python AltDriver, C# DriverWebSocketClient)
       if (path === "/altws/app") {
         const upgraded = server.upgrade(req, { data: { params, appName, role: "app" } });
         if (upgraded) return undefined;
@@ -63,7 +66,11 @@ export async function createAltTesterServer(
         if (upgraded) return undefined;
       }
 
-      return new Response("AltTester Server", { status: 200 });
+      // Dashboard HTTP routes
+      const dashResponse = handleDashboardRequest(req, registry, feed, startTime);
+      if (dashResponse) return dashResponse;
+
+      return new Response("Not found", { status: 404 });
     },
 
     websocket: {
@@ -77,16 +84,17 @@ export async function createAltTesterServer(
 
         if (role === "app") {
           registry.registerApp(appName, ws, { platform, platformVersion, deviceInstanceId, appId });
+          feed.emit({ type: "appConnected", appName, platform, platformVersion, deviceInstanceId });
           return;
         }
 
-        // R1-2: registerDriver checks pendingDrivers — callers can pre-mark a socket
-        // as pending via registry.markDriverPending() before this open handler fires
-        // (e.g. a future async path or test setup) to trigger close code 4007.
+        // registerDriver checks pendingDrivers — callers can pre-mark a socket
+        // as pending via registry.markDriverPending() to trigger close code 4007.
         const result = registry.registerDriver(appName, ws, { driverType, platform, platformVersion, deviceInstanceId });
 
         if (result === "paired") {
           ws.send(DRIVER_REGISTERED);
+          feed.emit({ type: "driverConnected", appName, driverType, paired: true });
           return;
         }
 
@@ -94,7 +102,6 @@ export async function createAltTesterServer(
         queueMicrotask(() => ws.close(code, CLOSE_REASONS[code] ?? "Connection rejected."));
       },
 
-      // R1-3: relay msg without casting — WsConn.send accepts both string and Buffer.
       message(ws: ServerWebSocket<WsData>, msg: string | Buffer) {
         const peer = registry.getPeer(ws) as ServerWebSocket<WsData> | undefined;
         if (!peer) return;
@@ -105,16 +112,21 @@ export async function createAltTesterServer(
         const role = registry.getRole(ws);
 
         if (role === ClientRole.App) {
-          const driverWs = registry.removeApp(ws) as ServerWebSocket<WsData> | undefined;
+          // Capture appName before removal (removeApp clears the metadata map)
+          const appName = ws.data.appName;
+          const driverWs = registry.removeApp(ws);
+          feed.emit({ type: "appDisconnected", appName });
           if (driverWs) {
-            queueMicrotask(() => driverWs.close(CloseCode.AppDisconnected, "App disconnected."));
+            queueMicrotask(() => (driverWs as ServerWebSocket<WsData>).close(CloseCode.AppDisconnected, "App disconnected."));
           }
           return;
         }
 
         if (role === ClientRole.Driver) {
-          // R1-4: notify the paired app that its driver disconnected.
+          // Capture appName before removal
+          const appName = ws.data.appName;
           const appWs = registry.removeDriver(ws) as ServerWebSocket<WsData> | undefined;
+          feed.emit({ type: "driverDisconnected", appName });
           if (appWs) {
             appWs.send(DRIVER_DISCONNECTED);
           }
@@ -126,6 +138,7 @@ export async function createAltTesterServer(
   return {
     port: server.port,
     registry,
+    feed,
     stop() {
       server.stop(true);
     },
