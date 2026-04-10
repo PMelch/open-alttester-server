@@ -39,7 +39,8 @@ export class InspectorService {
     parameters: Record<string, unknown> = {},
     timeoutMs = 5000,
   ): Promise<unknown> {
-    if (appWs.readyState !== 1) {
+    const WS_OPEN = 1;
+    if (appWs.readyState !== WS_OPEN) {
       return Promise.reject(new Error(`Inspector: app socket is not open (readyState=${appWs.readyState})`));
     }
     return new Promise((resolve, reject) => {
