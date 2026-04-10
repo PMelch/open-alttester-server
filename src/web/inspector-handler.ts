@@ -36,7 +36,7 @@ export async function handleInspectorRequest(
         cameraBy: "NAME",
         cameraValue: "",
         enabled: true,
-      });
+      }, 10_000); // large scenes can take longer to serialise
       return new Response(JSON.stringify({ objects }), {
         headers: { "Content-Type": "application/json; charset=utf-8" },
       });

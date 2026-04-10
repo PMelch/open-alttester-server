@@ -15,7 +15,7 @@ export class DashboardFeed {
   private encoder = new TextEncoder();
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 
-  startHeartbeat(intervalMs = 20_000): void {
+  startHeartbeat(intervalMs = 5_000): void {
     if (this.heartbeatTimer !== null) {
       clearInterval(this.heartbeatTimer);
     }
