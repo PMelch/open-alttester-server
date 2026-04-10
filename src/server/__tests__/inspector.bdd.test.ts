@@ -66,6 +66,43 @@ describe("Feature: Inspector", () => {
     });
   });
 
+  describe("Scenario: getAllLoadedScenes response is normalised to an array", () => {
+    it("Given the app returns a string for getAllLoadedScenes / When GET /inspector/:appName / Then scenes is always an array", async () => {
+      const { app, close } = await connectMockApp(srv.port, "NormGame", {
+        getAllLoadedScenes: "OnlyScene",      // string, not array
+        getCurrentScene: { name: "OnlyScene" },
+      });
+
+      const res = await fetch(`http://127.0.0.1:${srv.port}/inspector/NormGame`);
+      expect(res.status).toBe(200);
+      const body = await res.json() as { scenes: unknown[] };
+      expect(Array.isArray(body.scenes)).toBe(true);
+      expect(body.scenes).toContain("OnlyScene");
+
+      close();
+      app.close();
+    });
+  });
+
+  describe("Scenario: Rapid consecutive inspector calls succeed (supports auto-update polling)", () => {
+    it("Given a connected app / When the inspector endpoint is called 5 times in quick succession / Then all calls succeed", async () => {
+      const { app, close } = await connectMockApp(srv.port, "RapidGame", {
+        getAllLoadedScenes: ["Rapid"],
+        getCurrentScene: { name: "Rapid" },
+      });
+
+      const results = await Promise.all(
+        Array.from({ length: 5 }, () =>
+          fetch(`http://127.0.0.1:${srv.port}/inspector/RapidGame`).then(r => r.status),
+        ),
+      );
+      expect(results.every(s => s === 200)).toBe(true);
+
+      close();
+      app.close();
+    });
+  });
+
   describe("Scenario: Inspector does not interfere with active driver pairing (AC#5)", () => {
     it("Given a paired app+driver / When the inspector queries the app / Then driver relay still works", async () => {
       // Connect mock app with auto-respond

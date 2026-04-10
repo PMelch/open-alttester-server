@@ -142,6 +142,25 @@
               class="px-3 py-1 rounded text-xs font-medium bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200">
         ↺ Refresh
       </button>
+
+      <!-- Auto-update -->
+      <label class="flex items-center gap-1.5 text-xs text-slate-400 ml-1 cursor-pointer select-none">
+        <input type="checkbox" v-model="autoUpdate" :disabled="!insp.scenes.length" class="accent-sky-500 cursor-pointer">
+        Auto
+      </label>
+      <template v-if="autoUpdate">
+        <input type="number" v-model.number="autoIntervalMs" min="500" step="500"
+               class="w-20 bg-[#0f1117] border border-slate-700 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-sky-500">
+        <span class="text-xs text-slate-600">ms</span>
+      </template>
+
+      <!-- Depth -->
+      <span class="text-xs text-slate-600 ml-2">|</span>
+      <label class="text-xs text-slate-500">Depth:</label>
+      <input type="number" v-model.number="maxDepth" min="0" step="1"
+             class="w-16 bg-[#0f1117] border border-slate-700 rounded px-2 py-1 text-xs text-slate-300 focus:outline-none focus:border-sky-500"
+             title="Max hierarchy depth (0 = unlimited)">
+      <span class="text-xs text-slate-600">0=∞</span>
     </div>
 
     <div v-if="insp.error" class="text-red-400 text-xs mb-2">{{ insp.error }}</div>
@@ -156,8 +175,8 @@
     </div>
 
     <!-- Object tree -->
-    <div v-if="insp.flatObjects.length" class="font-mono text-xs max-h-64 overflow-y-auto">
-      <div v-for="obj in insp.flatObjects" :key="obj.id"
+    <div v-if="flatObjects.length" class="font-mono text-xs max-h-64 overflow-y-auto">
+      <div v-for="obj in flatObjects" :key="obj.id"
            :style="{ paddingLeft: (obj.depth * 14) + 'px' }"
            class="py-0.5 border-t border-slate-800/40 flex items-center gap-1 text-slate-300">
         <span class="text-slate-600 select-none">{{ obj.depth > 0 ? '└' : '▸' }}</span>
@@ -169,7 +188,7 @@
 </div>
 
 <script type="module">
-import { createApp, ref, computed, onMounted, onUnmounted } from 'vue';
+import { createApp, ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 createApp({
   setup() {
@@ -186,8 +205,12 @@ createApp({
       currentScene: null,
       rawObjects: [],
       objectsLoaded: false,
-      flatObjects: [],
     });
+
+    const maxDepth    = ref(0);     // 0 = unlimited
+    const autoUpdate  = ref(false);
+    const autoIntervalMs = ref(2000);
+    let autoTimer = null;
 
     const inspComputedScene = computed(() => {
       const cs = insp.value.currentScene;
@@ -197,7 +220,7 @@ createApp({
       return JSON.stringify(cs);
     });
 
-    function buildFlatObjects(objects) {
+    function buildFlatObjects(objects, maxD) {
       const map = new Map(objects.map(o => [o.id, { ...o, children: [] }]));
       const roots = [];
       for (const node of map.values()) {
@@ -209,12 +232,32 @@ createApp({
       function walk(nodes, depth) {
         for (const n of nodes) {
           flat.push({ id: n.id, name: n.name, depth });
-          walk(n.children, depth + 1);
+          if (maxD === 0 || depth < maxD) walk(n.children, depth + 1);
         }
       }
       walk(roots, 0);
       return flat;
     }
+
+    // flatObjects is a computed so depth changes re-render without re-fetching
+    const flatObjects = computed(() => buildFlatObjects(insp.value.rawObjects, maxDepth.value));
+
+    function stopAutoUpdate() {
+      if (autoTimer !== null) { clearInterval(autoTimer); autoTimer = null; }
+    }
+
+    function startAutoUpdate() {
+      stopAutoUpdate();
+      autoTimer = setInterval(() => {
+        if (!insp.value.loading && insp.value.selectedApp) inspectRefresh();
+      }, autoIntervalMs.value);
+    }
+
+    // restart timer when interval changes while auto-update is on
+    watch(autoIntervalMs, () => { if (autoUpdate.value) startAutoUpdate(); });
+    // stop and reset when app selection changes
+    watch(() => insp.value.selectedApp, () => { stopAutoUpdate(); autoUpdate.value = false; });
+    watch(autoUpdate, (on) => { if (on) startAutoUpdate(); else stopAutoUpdate(); });
 
     async function inspectScenes() {
       if (!insp.value.selectedApp || insp.value.loading) return;
@@ -224,7 +267,6 @@ createApp({
       insp.value.scenes = [];
       insp.value.currentScene = null;
       insp.value.rawObjects = [];
-      insp.value.flatObjects = [];
       insp.value.objectsLoaded = false;
       try {
         const r = await fetch(`/inspector/${encodeURIComponent(insp.value.selectedApp)}`);
@@ -250,7 +292,6 @@ createApp({
         const data = await r.json();
         if (data.error) throw new Error(data.error);
         insp.value.rawObjects = data.objects ?? [];
-        insp.value.flatObjects = buildFlatObjects(insp.value.rawObjects);
         insp.value.objectsLoaded = true;
       } catch (e) {
         insp.value.error = e.message;
@@ -337,14 +378,14 @@ createApp({
     onUnmounted(() => {
       es?.close();
       clearInterval(uptimeInterval);
+      stopAutoUpdate();
     });
 
     return {
       state, log, pairedCount, uptimeFormatted, isPaired,
-      // insp is returned as a plain ref so Vue auto-unwraps it in the template and
-      // v-model writes back to the reactive object (a computed spread-copy would not).
-      insp,
+      insp, flatObjects,
       currentSceneName: inspComputedScene,
+      maxDepth, autoUpdate, autoIntervalMs,
       inspectScenes, inspectObjects, inspectRefresh,
     };
   }

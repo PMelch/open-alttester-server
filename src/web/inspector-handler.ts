@@ -42,10 +42,12 @@ export async function handleInspectorRequest(
       });
     }
 
-    const [scenes, currentScene] = await Promise.all([
+    const [rawScenes, currentScene] = await Promise.all([
       inspector.send(appWs, "getAllLoadedScenes", {}),
       inspector.send(appWs, "getCurrentScene", {}),
     ]);
+    // Normalise: Unity may return a single string when only one scene is loaded
+    const scenes = Array.isArray(rawScenes) ? rawScenes : rawScenes != null ? [rawScenes] : [];
     return new Response(JSON.stringify({ scenes, currentScene }), {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
