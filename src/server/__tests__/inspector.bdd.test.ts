@@ -84,13 +84,11 @@ describe("Feature: Inspector", () => {
       const body = await res.json() as { scenes: string[] };
       expect(body.scenes).toEqual(["Main"]);
 
-      // Driver can still relay a message to app after inspector query
+      // driver→app direction: message sent by driver arrives at app
       const driverReceived: string[] = [];
       app.onmessage = (e: MessageEvent) => {
-        // echo back to driver (simulating app relay)
         try {
           const msg = JSON.parse(e.data as string);
-          // Don't echo inspector messages (they have inspector- prefix)
           if (String(msg.messageId).startsWith("inspector-")) return;
           driverReceived.push(e.data as string);
         } catch {}
@@ -99,6 +97,14 @@ describe("Feature: Inspector", () => {
       await waitMs(100);
       expect(driverReceived).toHaveLength(1);
       expect(JSON.parse(driverReceived[0]).commandName).toBe("ping");
+
+      // app→driver direction: message sent by app arrives at driver (R1-4)
+      const driverIncoming: string[] = [];
+      driver.onmessage = (e: MessageEvent) => { driverIncoming.push(e.data as string); };
+      app.send(JSON.stringify({ commandName: "notification", messageId: "app-1", data: "{}" }));
+      await waitMs(100);
+      expect(driverIncoming.length).toBeGreaterThan(0);
+      expect(JSON.parse(driverIncoming[0]).commandName).toBe("notification");
 
       close();
       app.close();

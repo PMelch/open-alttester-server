@@ -10,6 +10,13 @@ export async function handleInspectorRequest(
   const match = url.pathname.match(/^\/inspector\/([^/]+)(\/objects)?$/);
   if (!match) return null;
 
+  if (req.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { "Content-Type": "application/json; charset=utf-8", "Allow": "GET" },
+    });
+  }
+
   const appName = decodeURIComponent(match[1]);
   const isObjects = !!match[2];
 

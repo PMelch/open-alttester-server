@@ -39,6 +39,9 @@ export class InspectorService {
     parameters: Record<string, unknown> = {},
     timeoutMs = 5000,
   ): Promise<unknown> {
+    if (appWs.readyState !== 1) {
+      return Promise.reject(new Error(`Inspector: app socket is not open (readyState=${appWs.readyState})`));
+    }
     return new Promise((resolve, reject) => {
       const messageId = this.nextId();
       let settled = false;
@@ -50,8 +53,10 @@ export class InspectorService {
           const msg = JSON.parse(raw);
           if (msg.error) {
             reject(new Error(msg.error.message ?? "Inspector command failed"));
+          } else if (msg.data === undefined || msg.data === null) {
+            resolve(null);
           } else {
-            resolve(JSON.parse(msg.data));
+            resolve(typeof msg.data === "string" ? JSON.parse(msg.data) : msg.data);
           }
         } catch (e) {
           reject(e);

@@ -1,5 +1,5 @@
 {
-  "name": "alt-tester-server",
+  "name": "open-alttester-server",
   "version": "0.1.0",
   "description": "Open-source AltTester Desktop replacement — Bun-based WebSocket server and web dashboard",
   "type": "module",

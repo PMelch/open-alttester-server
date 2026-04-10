@@ -13,22 +13,22 @@ Open-source replacement for the AltTester Desktop app. Provides the WebSocket se
 No clone required — run directly with `bunx`:
 
 ```bash
-bunx alt-tester-server
+bunx open-alttester-server
 ```
 
 Or install globally and run as a command:
 
 ```bash
-bun install -g alt-tester-server
-alt-tester-server
+bun install -g open-alttester-server
+open-alttester-server
 ```
 
 Custom port:
 
 ```bash
-bunx alt-tester-server --port 9000
+bunx open-alttester-server --port 9000
 # or
-ALTSERVER_PORT=9000 bunx alt-tester-server
+ALTSERVER_PORT=9000 bunx open-alttester-server
 ```
 
 ---
