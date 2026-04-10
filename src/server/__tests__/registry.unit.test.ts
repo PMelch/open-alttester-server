@@ -24,12 +24,32 @@ describe("ConnectionRegistry", () => {
       );
     });
 
-    it("overwrites a previous app registration for the same appName", () => {
+    // R1-1: re-registration must clean up the old socket's metadata and peer links
+    it("cleans up old WsConn metadata when the same appName re-registers", () => {
       const ws1 = mockWs();
       const ws2 = mockWs();
       registry.registerApp("MyGame", ws1);
       registry.registerApp("MyGame", ws2);
       expect(registry.getApp("MyGame")).toBe(ws2);
+      // old socket must not appear in metadata
+      expect(registry.getRole(ws1)).toBeUndefined();
+    });
+
+    it("cleans up paired driver when app re-registers (prevents stale peer link)", () => {
+      const appWs1 = mockWs();
+      const driverWs = mockWs();
+      registry.registerApp("MyGame", appWs1);
+      registry.registerDriver("MyGame", driverWs);
+      expect(registry.isPaired("MyGame")).toBe(true);
+
+      // app reconnects
+      const appWs2 = mockWs();
+      registry.registerApp("MyGame", appWs2);
+
+      // old pairing must be gone
+      expect(registry.getPeer(appWs1)).toBeUndefined();
+      expect(registry.getPeer(driverWs)).toBeUndefined();
+      expect(registry.isPaired("MyGame")).toBe(false);
     });
   });
 
@@ -60,8 +80,7 @@ describe("ConnectionRegistry", () => {
     });
 
     it("returns MultipleDriversTrying when a driver is pending pairing", () => {
-      const appWs = mockWs();
-      registry.registerApp("MyGame", appWs);
+      registry.registerApp("MyGame", mockWs());
       registry.markDriverPending("MyGame", mockWs());
       const result = registry.registerDriver("MyGame", mockWs());
       expect(result).toBe(CloseCode.MultipleDriversTrying);
@@ -91,14 +110,19 @@ describe("ConnectionRegistry", () => {
   // --- removeDriver ---
 
   describe("removeDriver", () => {
-    it("unpairs the driver from its app", () => {
+    it("unpairs the driver and returns the paired app", () => {
       const appWs = mockWs();
       const driverWs = mockWs();
       registry.registerApp("MyGame", appWs);
       registry.registerDriver("MyGame", driverWs);
-      registry.removeDriver(driverWs);
+      const app = registry.removeDriver(driverWs);
+      expect(app).toBe(appWs);
       expect(registry.getPairedDriver(appWs)).toBeUndefined();
       expect(registry.getPairedApp(driverWs)).toBeUndefined();
+    });
+
+    it("returns undefined for an unregistered driver", () => {
+      expect(registry.removeDriver(mockWs())).toBeUndefined();
     });
   });
 
@@ -136,8 +160,7 @@ describe("ConnectionRegistry", () => {
     });
 
     it("returns metadata for all connected drivers", () => {
-      const appWs = mockWs();
-      registry.registerApp("MyGame", appWs);
+      registry.registerApp("MyGame", mockWs());
       registry.registerDriver("MyGame", mockWs(), { driverType: "SDK", platform: "unknown", platformVersion: "unknown", deviceInstanceId: "d1" });
       expect(registry.connectedDrivers()).toHaveLength(1);
     });

@@ -3,7 +3,6 @@ export const enum CloseCode {
   AppDisconnected = 4002,
   MultipleDrivers = 4005,
   MultipleDriversTrying = 4007,
-  MaxConnections = 4009,
 }
 
 export const enum ClientRole {
@@ -11,7 +10,7 @@ export const enum ClientRole {
   Driver = "driver",
 }
 
-/** Minimal interface satisfied by both ServerWebSocket (server) and WebSocket mock (tests). */
+/** Minimal interface satisfied by both ServerWebSocket (server) and mock sockets (tests). */
 export interface WsConn {
   send(data: string | ArrayBufferLike | ArrayBufferView | Bun.BufferSource): void;
   close(code?: number, reason?: string): void;
@@ -50,6 +49,12 @@ export class ConnectionRegistry {
     ws: WsConn,
     meta: Partial<Omit<AppMeta, "appName" | "connectedAt">> = {},
   ): void {
+    // R1-1: clean up any previous registration for this appName before re-registering
+    const existing = this.apps.get(appName);
+    if (existing) {
+      this.removeApp(existing);
+    }
+
     this.apps.set(appName, ws);
     this.appMeta.set(ws, {
       appName,
@@ -106,6 +111,7 @@ export class ConnectionRegistry {
     this.pendingDrivers.delete(appName);
   }
 
+  /** Remove an app and all associated state. Returns the paired driver (if any). */
   removeApp(ws: WsConn): WsConn | undefined {
     const meta = this.appMeta.get(ws);
     if (!meta) return undefined;
@@ -122,15 +128,17 @@ export class ConnectionRegistry {
     return driverWs;
   }
 
-  removeDriver(ws: WsConn): void {
+  /** Remove a driver. Returns the paired app (if any) so the caller can notify it. */
+  removeDriver(ws: WsConn): WsConn | undefined {
     const meta = this.driverMeta.get(ws);
-    if (!meta) return;
+    if (!meta) return undefined;
     const { appName } = meta;
     this.drivers.delete(appName);
     this.driverMeta.delete(ws);
     const appWs = this.peers.get(ws);
     if (appWs) this.peers.delete(appWs);
     this.peers.delete(ws);
+    return appWs;
   }
 
   getPairedApp(driverWs: WsConn): WsConn | undefined {

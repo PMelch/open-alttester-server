@@ -1,5 +1,5 @@
 import type { ServerWebSocket } from "bun";
-import { ConnectionRegistry, CloseCode, ClientRole } from "./registry";
+import { ConnectionRegistry, CloseCode, ClientRole, type WsConn } from "./registry";
 
 export interface AltTesterServerOptions {
   port: number;
@@ -23,11 +23,16 @@ const DRIVER_REGISTERED = JSON.stringify({
   data: "",
 });
 
+const DRIVER_DISCONNECTED = JSON.stringify({
+  isNotification: true,
+  commandName: "driverDisconnected",
+  data: "",
+});
+
 const CLOSE_REASONS: Record<number, string> = {
   [CloseCode.NoAppConnected]: "No app connected with that appName.",
   [CloseCode.MultipleDrivers]: "A driver is already connected to that app.",
   [CloseCode.MultipleDriversTrying]: "Another driver is already trying to connect.",
-  [CloseCode.MaxConnections]: "Maximum number of connections exceeded.",
 };
 
 export async function createAltTesterServer(
@@ -44,10 +49,10 @@ export async function createAltTesterServer(
       const appName = params.get("appName") ?? "__default__";
       const path = url.pathname;
 
-      // Determine role from path:
-      //   /altws/app  → Unity SDK app
-      //   /altws      → test driver (Python, C#, etc.)
-      //   /           → HTTP dashboard (future)
+      // Path-based role distinction (from SDK source):
+      //   /altws/app  → Unity SDK app (RuntimeWebSocketClient)
+      //   /altws      → test driver (Python, C# DriverWebSocketClient)
+      //   /           → HTTP dashboard (served in TASK-1.4)
       if (path === "/altws/app") {
         const upgraded = server.upgrade(req, { data: { params, appName, role: "app" } });
         if (upgraded) return undefined;
@@ -75,7 +80,9 @@ export async function createAltTesterServer(
           return;
         }
 
-        // role === "driver"
+        // R1-2: registerDriver checks pendingDrivers — callers can pre-mark a socket
+        // as pending via registry.markDriverPending() before this open handler fires
+        // (e.g. a future async path or test setup) to trigger close code 4007.
         const result = registry.registerDriver(appName, ws, { driverType, platform, platformVersion, deviceInstanceId });
 
         if (result === "paired") {
@@ -87,27 +94,30 @@ export async function createAltTesterServer(
         queueMicrotask(() => ws.close(code, CLOSE_REASONS[code] ?? "Connection rejected."));
       },
 
+      // R1-3: relay msg without casting — WsConn.send accepts both string and Buffer.
       message(ws: ServerWebSocket<WsData>, msg: string | Buffer) {
-        const peer = registry.getPeer(ws);
+        const peer = registry.getPeer(ws) as ServerWebSocket<WsData> | undefined;
         if (!peer) return;
-        (peer as ServerWebSocket<WsData>).send(msg as string);
+        peer.send(msg);
       },
 
       close(ws: ServerWebSocket<WsData>, _code: number, _reason: string) {
         const role = registry.getRole(ws);
 
         if (role === ClientRole.App) {
-          const driverWs = registry.removeApp(ws);
+          const driverWs = registry.removeApp(ws) as ServerWebSocket<WsData> | undefined;
           if (driverWs) {
-            queueMicrotask(() =>
-              (driverWs as ServerWebSocket<WsData>).close(CloseCode.AppDisconnected, "App disconnected.")
-            );
+            queueMicrotask(() => driverWs.close(CloseCode.AppDisconnected, "App disconnected."));
           }
           return;
         }
 
         if (role === ClientRole.Driver) {
-          registry.removeDriver(ws);
+          // R1-4: notify the paired app that its driver disconnected.
+          const appWs = registry.removeDriver(ws) as ServerWebSocket<WsData> | undefined;
+          if (appWs) {
+            appWs.send(DRIVER_DISCONNECTED);
+          }
         }
       },
     },
