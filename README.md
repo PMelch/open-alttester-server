@@ -98,6 +98,29 @@ driver = AltDriver()          # defaults: host=127.0.0.1, port=13000
 driver = AltDriver(host="127.0.0.1", port=9000)  # custom port
 ```
 
+## Testing the CLI locally (before publishing)
+
+Use `bun link` to register the package globally from your local checkout, then run it exactly as an end-user would via `bunx`:
+
+```bash
+# In the project root — registers the package in bun's global bin
+bun link
+
+# Now test as if installed from npm:
+bunx open-alttester-server
+bunx open-alttester-server --port 9000
+```
+
+To unlink when you're done:
+
+```bash
+bun unlink open-alttester-server
+```
+
+`bun link` creates a symlink from the global bun registry to your local `bin/open-alttester-server.ts`, so every code change is reflected immediately — no re-link needed.
+
+---
+
 ## Tests
 
 ```bash
