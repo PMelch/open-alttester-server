@@ -34,7 +34,7 @@ export async function handleInspectorRequest(
         by: "PATH",
         value: "//*",
         cameraBy: "NAME",
-        cameraValue: "",
+        cameraValue: "//",  // "//" is the AltOldFindObjectsCommand sentinel for "no camera"
         enabled: true,
       }, 10_000); // large scenes can take longer to serialise
       return new Response(JSON.stringify({ objects }), {
@@ -53,6 +53,11 @@ export async function handleInspectorRequest(
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
+    const label = isObjects ? "findObjects" : "scenes";
+    console.error(`[inspector] ${label} failed for app "${appName}": ${message}`);
+    if (err instanceof Error && (err as NodeJS.ErrnoException & { unityTrace?: string }).unityTrace) {
+      console.error(`[inspector] Unity stack trace:\n${(err as NodeJS.ErrnoException & { unityTrace?: string }).unityTrace}`);
+    }
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { "Content-Type": "application/json; charset=utf-8" },

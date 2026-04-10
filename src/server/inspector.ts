@@ -53,7 +53,9 @@ export class InspectorService {
         try {
           const msg = JSON.parse(raw);
           if (msg.error) {
-            reject(new Error(msg.error.message ?? "Inspector command failed"));
+            const err = new Error(msg.error.message ?? "Inspector command failed");
+            if (msg.error.trace) (err as Error & { unityTrace: string }).unityTrace = msg.error.trace;
+            reject(err);
           } else if (msg.data === undefined || msg.data === null) {
             resolve(null);
           } else {
