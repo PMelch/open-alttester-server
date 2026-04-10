@@ -289,12 +289,10 @@ createApp({
       }
     }
 
-    // Full refresh: always loads scenes; loads objects if they were loaded before
-    // OR if this is the first inspect (treat initial Inspect click as full load).
+    // Always loads scenes + objects. If scenes fail, skip objects so the error stays visible.
     async function inspectRefresh() {
-      const hadObjects = insp.value.objectsLoaded;
       await inspectScenes();
-      if (hadObjects || !insp.value.error) await inspectObjects();
+      if (!insp.value.error) await inspectObjects();
     }
     // ── end Inspector ────────────────────────────────────────────────
     let es = null;
