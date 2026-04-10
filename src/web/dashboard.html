@@ -302,8 +302,9 @@ createApp({
     }
 
     async function inspectRefresh() {
+      const hadObjects = insp.value.objectsLoaded;  // capture before inspectScenes resets it
       await inspectScenes();
-      if (insp.value.objectsLoaded) await inspectObjects();
+      if (hadObjects) await inspectObjects();
     }
     // ── end Inspector ────────────────────────────────────────────────
     let es = null;
