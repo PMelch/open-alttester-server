@@ -7,6 +7,6 @@
     "skipLibCheck": true,
     "types": ["bun-types"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "bin/**/*"],
   "exclude": ["node_modules", "AltTester-Unity-SDK"]
 }

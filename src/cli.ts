@@ -1,4 +1,4 @@
-import { createAltTesterServer } from "./server/server.ts";
+import { createAltTesterServer, type AltTesterServer } from "./server/server.ts";
 
 /**
  * Resolve the server port from CLI argv and environment variables.
@@ -12,7 +12,8 @@ export function resolvePort(
   let raw: string | undefined;
 
   for (let i = 0; i < argv.length; i++) {
-    if ((argv[i] === "--port" || argv[i] === "-p") && argv[i + 1] !== undefined) {
+    if (argv[i] === "--port" || argv[i] === "-p") {
+      if (argv[i + 1] === undefined) throw new Error(`${argv[i]} requires a value`);
       raw = argv[++i];
       break;
     }
@@ -33,7 +34,7 @@ export function resolvePort(
 export async function runCli(
   argv: string[],
   env: Record<string, string | undefined>,
-): Promise<void> {
+): Promise<AltTesterServer> {
   const port = resolvePort(argv, env);
   const server = await createAltTesterServer({ port });
 
@@ -53,4 +54,6 @@ export async function runCli(
     server.stop();
     process.exit(0);
   });
+
+  return server;
 }
