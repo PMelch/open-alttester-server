@@ -3,6 +3,24 @@
   "version": "0.1.0",
   "description": "Open-source AltTester Desktop replacement — Bun-based WebSocket server and web dashboard",
   "type": "module",
+  "license": "MIT",
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "bin": {
+    "open-alttester-server": "./bin/open-alttester-server.ts"
+  },
+  "files": [
+    "src/index.ts",
+    "src/cli.ts",
+    "src/server/inspector.ts",
+    "src/server/registry.ts",
+    "src/server/server.ts",
+    "src/web/dashboard.html",
+    "src/web/handler.ts",
+    "src/web/inspector-handler.ts",
+    "bin/"
+  ],
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
@@ -11,11 +29,6 @@
     "test:coverage": "bun test --coverage"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.2.2",
-    "@types/bun": "latest",
-    "tailwindcss": "^4.2.2"
-  },
-  "dependencies": {
-    "vue": "^3.5.32"
+    "@types/bun": "latest"
   }
 }
