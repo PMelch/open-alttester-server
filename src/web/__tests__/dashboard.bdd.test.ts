@@ -99,6 +99,20 @@ describe("Feature: Web dashboard", () => {
       driver.close();
     });
   });
+  describe("Scenario: SSE heartbeat keeps connection alive", () => {
+    it("Given an SSE subscriber / When no events are emitted / Then a keepalive comment arrives within the heartbeat interval", async () => {
+      const heartbeatSrv = await createAltTesterServer({ port: 0, heartbeatMs: 100 });
+      try {
+        const { lines, cancel } = openSseStreamRaw(heartbeatSrv.port, "/dashboard/events");
+        await waitForRawLine(lines, ": keepalive", 500);
+        expect(lines.some(l => l.startsWith(": keepalive"))).toBe(true);
+        cancel();
+      } finally {
+        heartbeatSrv.stop();
+      }
+    });
+  });
+
   describe("Scenario: SSE feed emits driverDisconnected event", () => {
     it("Given a paired session / When the driver disconnects / Then a driverDisconnected event is received", async () => {
       const app = new WebSocket(appUrl(srv.port, "DiscoDriver"));
@@ -195,4 +209,42 @@ function waitForEvent(events: SseEvent[], type: string, timeoutMs: number): Prom
 
 function waitMs(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+function openSseStreamRaw(port: number, path: string): { lines: string[]; cancel: () => void } {
+  const lines: string[] = [];
+  const ctrl = new AbortController();
+
+  fetch(`http://127.0.0.1:${port}${path}`, {
+    headers: { Accept: "text/event-stream" },
+    signal: ctrl.signal,
+  }).then(async (res) => {
+    const reader = res.body!.getReader();
+    const decoder = new TextDecoder();
+    let buf = "";
+    while (true) {
+      const { done, value } = await reader.read().catch(() => ({ done: true, value: undefined }));
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split("\n");
+      buf = parts.pop() ?? "";
+      for (const line of parts) {
+        if (line.length > 0) lines.push(line);
+      }
+    }
+  }).catch(() => {});
+
+  return { lines, cancel: () => ctrl.abort() };
+}
+
+function waitForRawLine(lines: string[], prefix: string, timeoutMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (lines.some(l => l.startsWith(prefix))) return resolve();
+      if (Date.now() - start > timeoutMs) return reject(new Error(`Timed out waiting for SSE line: ${prefix}`));
+      setTimeout(check, 20);
+    };
+    check();
+  });
 }

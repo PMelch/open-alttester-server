@@ -4,6 +4,8 @@ import { DashboardFeed, handleDashboardRequest } from "../web/handler";
 
 export interface AltTesterServerOptions {
   port: number;
+  /** Heartbeat interval in ms for SSE keepalive comments. Default: 20000. */
+  heartbeatMs?: number;
 }
 
 export interface AltTesterServer {
@@ -42,6 +44,7 @@ export async function createAltTesterServer(
 ): Promise<AltTesterServer> {
   const registry = new ConnectionRegistry();
   const feed = new DashboardFeed();
+  feed.startHeartbeat(opts.heartbeatMs ?? 20_000);
   const startTime = Date.now();
 
   const server = Bun.serve<WsData>({
@@ -140,6 +143,7 @@ export async function createAltTesterServer(
     registry,
     feed,
     stop() {
+      feed.stopHeartbeat();
       server.stop(true);
     },
   };

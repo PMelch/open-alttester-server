@@ -13,6 +13,31 @@ export type DashboardEvent =
 export class DashboardFeed {
   private clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
   private encoder = new TextEncoder();
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+
+  startHeartbeat(intervalMs = 20_000): void {
+    this.heartbeatTimer = setInterval(() => {
+      this.emitRaw(": keepalive\n\n");
+    }, intervalMs);
+  }
+
+  stopHeartbeat(): void {
+    if (this.heartbeatTimer !== null) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+  }
+
+  private emitRaw(raw: string): void {
+    const bytes = this.encoder.encode(raw);
+    for (const ctrl of this.clients) {
+      try {
+        ctrl.enqueue(bytes);
+      } catch {
+        this.clients.delete(ctrl);
+      }
+    }
+  }
 
   subscribe(): ReadableStream<Uint8Array> {
     let ctrl!: ReadableStreamDefaultController<Uint8Array>;
