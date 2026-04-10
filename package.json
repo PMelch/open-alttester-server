@@ -1,0 +1,16 @@
+{
+  "name": "alt-tester-server",
+  "version": "0.1.0",
+  "description": "Open-source AltTester Desktop replacement — Bun-based WebSocket server and web dashboard",
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
