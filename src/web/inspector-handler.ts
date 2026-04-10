@@ -54,9 +54,10 @@ export async function handleInspectorRequest(
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     const label = isObjects ? "findObjects" : "scenes";
+    const errWithTrace = err as Error & { unityTrace?: string };
     console.error(`[inspector] ${label} failed for app "${appName}": ${message}`);
-    if (err instanceof Error && (err as NodeJS.ErrnoException & { unityTrace?: string }).unityTrace) {
-      console.error(`[inspector] Unity stack trace:\n${(err as NodeJS.ErrnoException & { unityTrace?: string }).unityTrace}`);
+    if (errWithTrace.unityTrace) {
+      console.error(`[inspector] Unity stack trace:\n${errWithTrace.unityTrace}`);
     }
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
