@@ -99,6 +99,27 @@ describe("Feature: Web dashboard", () => {
       driver.close();
     });
   });
+  describe("Scenario: SSE feed emits driverDisconnected event", () => {
+    it("Given a paired session / When the driver disconnects / Then a driverDisconnected event is received", async () => {
+      const app = new WebSocket(appUrl(srv.port, "DiscoDriver"));
+      await wsOpen(app);
+      await waitMs(30);
+
+      const driver = new WebSocket(driverUrl(srv.port, "DiscoDriver"));
+      await wsOpen(driver);
+      await waitMs(30);
+
+      const { events, cancel } = openSseStream(srv.port, "/dashboard/events");
+      await waitMs(30);
+
+      driver.close();
+      await waitForEvent(events, "driverDisconnected", 2000);
+      expect(events.some(e => e.event === "driverDisconnected" && e.data.includes("DiscoDriver"))).toBe(true);
+
+      cancel();
+      app.close();
+    });
+  });
 });
 
 // ------------------------------------------------------------------ utilities

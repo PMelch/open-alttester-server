@@ -91,7 +91,7 @@
           <tr v-if="state.drivers.length === 0">
             <td colspan="3" class="text-slate-600 py-2">No drivers connected</td>
           </tr>
-          <tr v-for="d in state.drivers" :key="d.appName + d.deviceInstanceId" class="border-t border-slate-700/50">
+          <tr v-for="d in state.drivers" :key="`${d.appName}::${d.deviceInstanceId}`" class="border-t border-slate-700/50">
             <td class="py-2 font-mono text-slate-200">{{ d.appName }}</td>
             <td class="py-2 text-slate-400">{{ d.driverType }}</td>
             <td class="py-2">
@@ -186,9 +186,10 @@ createApp({
 
       es.onerror = () => addLog('SSE connection lost — retrying…', 'text-red-500');
 
+      // R3-1: increment uptime locally instead of polling the server every second
       uptimeInterval = setInterval(() => {
-        fetchState();
-      }, 2000);
+        state.value = { ...state.value, uptime: state.value.uptime + 1 };
+      }, 1000);
     });
 
     onUnmounted(() => {
