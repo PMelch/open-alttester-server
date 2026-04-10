@@ -46,11 +46,13 @@ describe("Feature: Inspector", () => {
   });
 
   describe("Scenario: Objects returned for connected app", () => {
-    it("Given a connected Unity app / When GET /inspector/:appName/objects / Then the game object list is returned", async () => {
+    it("Given a connected Unity app / When GET /inspector/:appName/objects / Then the game object list is returned with transformParentId for hierarchy", async () => {
+      // AltObject uses transformId (own) and transformParentId (parent's transformId) for tree linking.
+      // parentId is NOT a field — using it causes every object to appear at root level.
       const objects = [
-        { id: 1, name: "Main Camera", parentId: 0, transformId: 10 },
-        { id: 2, name: "Player", parentId: 0, transformId: 20 },
-        { id: 3, name: "Sword", parentId: 2, transformId: 30 },
+        { id: 1, name: "Main Camera", transformId: 10, transformParentId: 0 },
+        { id: 2, name: "Canvas",      transformId: 20, transformParentId: 0 },
+        { id: 3, name: "TestRoot",    transformId: 30, transformParentId: 20 }, // child of Canvas
       ];
       const { app, close } = await connectMockApp(srv.port, "ObjectGame", {
         findObjects: objects,
@@ -60,6 +62,8 @@ describe("Feature: Inspector", () => {
       expect(res.status).toBe(200);
       const body = await res.json() as { objects: typeof objects };
       expect(body.objects).toEqual(objects);
+      // Verify transformParentId is preserved (not renamed to parentId)
+      expect(body.objects[2].transformParentId).toBe(20); // TestRoot is a child of Canvas
 
       close();
       app.close();

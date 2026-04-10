@@ -209,10 +209,11 @@ createApp({
     });
 
     function buildFlatObjects(objects, maxD) {
-      const map = new Map(objects.map(o => [o.id, { ...o, children: [] }]));
+      // AltObject uses transformId (own) and transformParentId (parent's transformId) for tree linkage.
+      const map = new Map(objects.map(o => [o.transformId, { ...o, children: [] }]));
       const roots = [];
       for (const node of map.values()) {
-        const parent = map.get(node.parentId);
+        const parent = map.get(node.transformParentId);
         if (parent) parent.children.push(node);
         else roots.push(node);
       }
