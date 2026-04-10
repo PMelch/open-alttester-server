@@ -65,14 +65,19 @@ describe("InspectorService", () => {
       expect(cmd.commandName).toBe("getAllLoadedScenes");
       expect(typeof cmd.messageId).toBe("string");
       expect(cmd.messageId.length).toBeGreaterThan(0);
-      expect(cmd.parameters).toEqual({});
+      // parameters spread flat — no "parameters" wrapper key
+      expect(cmd.parameters).toBeUndefined();
     });
 
-    it("includes provided parameters in the command", () => {
+    it("includes provided parameters in the command as flat top-level fields", () => {
       const { ws, sent } = makeMockWs();
       svc.send(ws, "findObjects", { path: "//*", cameraBy: "NAME", cameraPath: "//", enabled: true }, 1000).catch(() => {});
       const cmd = JSON.parse(sent[0]);
-      expect(cmd.parameters).toEqual({ path: "//*", cameraBy: "NAME", cameraPath: "//", enabled: true });
+      // Unity deserialises the message directly into AltFindObjectsParams (flat, no "parameters" wrapper)
+      expect(cmd.path).toBe("//*");
+      expect(cmd.cameraBy).toBe("NAME");
+      expect(cmd.cameraPath).toBe("//");
+      expect(cmd.enabled).toBe(true);
     });
 
     it("uses unique messageIds for concurrent requests", () => {

@@ -49,14 +49,18 @@ describe("Feature: Web dashboard", () => {
 
   describe("Scenario: SSE feed emits appConnected event", () => {
     it("Given an SSE subscriber / When a Unity app connects / Then an appConnected event is received", async () => {
-      // Open SSE stream first, then trigger the action so no events are missed
-      const { events, cancel } = openSseStream(srv.port, "/dashboard/events");
+      // Wait for the server's initial keepalive before connecting the WebSocket.
+      // The server enqueues ": keepalive" synchronously on subscribe(), flushing
+      // headers immediately. Waiting for it guarantees the SSE reader is active
+      // before we trigger the appConnected event.
+      const { lines, cancel } = openSseStreamRaw(srv.port, "/dashboard/events");
+      await waitForRawLine(lines, ": keepalive", 500);
 
       const app = new WebSocket(appUrl(srv.port, "LiveGame"));
       await wsOpen(app);
 
-      await waitForEvent(events, "appConnected", 2000);
-      expect(events.some(e => e.event === "appConnected" && e.data.includes("LiveGame"))).toBe(true);
+      await waitForRawLine(lines, "event: appConnected", 2000);
+      expect(lines.some(l => l.includes("LiveGame"))).toBe(true);
 
       cancel();
       app.close();

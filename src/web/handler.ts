@@ -48,6 +48,8 @@ export class DashboardFeed {
       start: (c) => {
         ctrl = c;
         this.clients.add(ctrl);
+        // Flush headers immediately so the client knows the connection is live
+        ctrl.enqueue(this.encoder.encode(": keepalive\n\n"));
       },
       cancel: () => {
         this.clients.delete(ctrl);

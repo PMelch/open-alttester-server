@@ -66,7 +66,8 @@ export class InspectorService {
         }
       });
 
-      appWs.send(JSON.stringify({ commandName: command, messageId, parameters }));
+      // Unity deserialises the message directly into the command params class (flat, no wrapper).
+      appWs.send(JSON.stringify({ commandName: command, messageId, ...parameters }));
 
       setTimeout(() => {
         if (this.pending.delete(messageId)) {

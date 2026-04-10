@@ -105,7 +105,7 @@ describe("Feature: Inspector", () => {
 
   describe("Scenario: findObjects command uses //* path selector", () => {
     it("Given a connected Unity app / When GET /inspector/:appName/objects / Then findObjects is sent with value '//*'", async () => {
-      const received: Array<{ commandName: string; messageId: string; parameters: Record<string, unknown> }> = [];
+      const received: Array<Record<string, unknown>> = [];
       const objects = [{ id: 1, name: "Root", parentId: 0, transformId: 1 }];
 
       const app = new WebSocket(appUrl(srv.port, "PathGame"));
@@ -113,7 +113,7 @@ describe("Feature: Inspector", () => {
 
       app.addEventListener("message", (e: MessageEvent) => {
         try {
-          const msg = JSON.parse(e.data as string) as { commandName: string; messageId: string; parameters: Record<string, unknown> };
+          const msg = JSON.parse(e.data as string) as Record<string, unknown>;
           received.push(msg);
           if (msg.commandName === "findObjects") {
             app.send(JSON.stringify({
@@ -130,13 +130,12 @@ describe("Feature: Inspector", () => {
 
       const cmd = received.find(m => m.commandName === "findObjects");
       expect(cmd).toBeDefined();
-      // BaseFindObjectsParams has a "path" field, not "by"+"value".
-      // The driver pre-processes By.PATH+"//*" → path="//*" before sending.
-      expect(cmd!.parameters.path).toBe("//*");
+      // Unity deserialises the message flat (no "parameters" wrapper).
+      // BaseFindObjectsParams fields: path, cameraBy, cameraPath, enabled.
+      expect(cmd!.path).toBe("//*");
       // cameraPath="//" is the AltOldFindObjectsCommand sentinel: skip camera lookup.
-      // Sending cameraPath=null (by omitting or using wrong field name) causes NullReferenceException
-      // at AltOldFindObjectsCommand.cs:33 where it calls cameraPath.Equals("//").
-      expect(cmd!.parameters.cameraPath).toBe("//");
+      // null cameraPath causes NullReferenceException at AltOldFindObjectsCommand.cs:33.
+      expect(cmd!.cameraPath).toBe("//");
 
       app.close();
     });
