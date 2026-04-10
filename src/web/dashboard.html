@@ -264,6 +264,7 @@ createApp({
         insp.value.currentScene = data.currentScene ?? null;
       } catch (e) {
         insp.value.error = e.message;
+        autoUpdate.value = false;  // pause auto-update so the error stays readable
       } finally {
         insp.value.loading = false;
         insp.value.phase = '';
@@ -283,6 +284,7 @@ createApp({
         insp.value.objectsLoaded = true;
       } catch (e) {
         insp.value.error = e.message;
+        autoUpdate.value = false;  // pause auto-update so the error stays readable
       } finally {
         insp.value.loading = false;
         insp.value.phase = '';

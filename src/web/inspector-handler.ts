@@ -32,7 +32,7 @@ export async function handleInspectorRequest(
     if (isObjects) {
       const objects = await inspector.send(appWs, "findObjects", {
         by: "PATH",
-        value: "//",
+        value: "//*",
         cameraBy: "NAME",
         cameraValue: "",
         enabled: true,

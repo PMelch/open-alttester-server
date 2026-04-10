@@ -103,6 +103,39 @@ describe("Feature: Inspector", () => {
     });
   });
 
+  describe("Scenario: findObjects command uses //* path selector", () => {
+    it("Given a connected Unity app / When GET /inspector/:appName/objects / Then findObjects is sent with value '//*'", async () => {
+      const received: Array<{ commandName: string; messageId: string; parameters: Record<string, unknown> }> = [];
+      const objects = [{ id: 1, name: "Root", parentId: 0, transformId: 1 }];
+
+      const app = new WebSocket(appUrl(srv.port, "PathGame"));
+      await wsOpen(app);
+
+      app.addEventListener("message", (e: MessageEvent) => {
+        try {
+          const msg = JSON.parse(e.data as string) as { commandName: string; messageId: string; parameters: Record<string, unknown> };
+          received.push(msg);
+          if (msg.commandName === "findObjects") {
+            app.send(JSON.stringify({
+              commandName: msg.commandName,
+              messageId: msg.messageId,
+              data: JSON.stringify(objects),
+            }));
+          }
+        } catch {}
+      });
+
+      const res = await fetch(`http://127.0.0.1:${srv.port}/inspector/PathGame/objects`);
+      expect(res.status).toBe(200);
+
+      const cmd = received.find(m => m.commandName === "findObjects");
+      expect(cmd).toBeDefined();
+      expect(cmd!.parameters.value).toBe("//*");
+
+      app.close();
+    });
+  });
+
   describe("Scenario: Inspector does not interfere with active driver pairing (AC#5)", () => {
     it("Given a paired app+driver / When the inspector queries the app / Then driver relay still works", async () => {
       // Connect mock app with auto-respond
