@@ -105,7 +105,7 @@
   </div>
 
   <!-- Event log -->
-  <div class="bg-[#1e2533] rounded-lg p-4">
+  <div class="bg-[#1e2533] rounded-lg p-4 mb-6">
     <h2 class="text-xs uppercase tracking-wider text-slate-500 mb-3">Event Log</h2>
     <div class="font-mono text-xs text-slate-400 max-h-40 overflow-y-auto space-y-1">
       <div v-if="log.length === 0" class="text-slate-600">No events yet</div>
@@ -113,6 +113,58 @@
         <span class="text-slate-600">{{ entry.time }}</span> {{ entry.msg }}
       </div>
     </div>
+  </div>
+
+  <!-- Inspector -->
+  <div class="bg-[#1e2533] rounded-lg p-4">
+    <h2 class="text-xs uppercase tracking-wider text-slate-500 mb-3">Inspector</h2>
+
+    <div class="flex flex-wrap gap-2 mb-3 items-center">
+      <select v-model="insp.selectedApp"
+              class="bg-[#0f1117] border border-slate-700 rounded px-2 py-1 text-sm text-slate-300 focus:outline-none focus:border-sky-500">
+        <option value="">Select an app…</option>
+        <option v-for="app in state.apps" :key="app.appName" :value="app.appName">{{ app.appName }}</option>
+      </select>
+      <button @click="inspectScenes"
+              :disabled="!insp.selectedApp || insp.loading"
+              class="px-3 py-1 rounded text-xs font-medium bg-sky-700 hover:bg-sky-600 disabled:opacity-40 disabled:cursor-not-allowed text-white">
+        {{ insp.loading && insp.phase === 'scenes' ? 'Loading…' : 'Inspect' }}
+      </button>
+      <button v-if="insp.scenes.length"
+              @click="inspectObjects"
+              :disabled="insp.loading"
+              class="px-3 py-1 rounded text-xs font-medium bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200">
+        {{ insp.loading && insp.phase === 'objects' ? 'Loading…' : 'Load Objects' }}
+      </button>
+      <button v-if="insp.scenes.length"
+              @click="inspectRefresh"
+              :disabled="insp.loading"
+              class="px-3 py-1 rounded text-xs font-medium bg-slate-700 hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed text-slate-200">
+        ↺ Refresh
+      </button>
+    </div>
+
+    <div v-if="insp.error" class="text-red-400 text-xs mb-2">{{ insp.error }}</div>
+
+    <div v-if="insp.currentScene" class="text-xs mb-1">
+      <span class="text-slate-500">Current scene: </span>
+      <span class="text-sky-400 font-mono">{{ insp.currentSceneName }}</span>
+    </div>
+    <div v-if="insp.scenes.length" class="text-xs mb-3">
+      <span class="text-slate-500">Loaded: </span>
+      <span class="text-slate-300 font-mono">{{ insp.scenes.join(', ') }}</span>
+    </div>
+
+    <!-- Object tree -->
+    <div v-if="insp.flatObjects.length" class="font-mono text-xs max-h-64 overflow-y-auto">
+      <div v-for="obj in insp.flatObjects" :key="obj.id"
+           :style="{ paddingLeft: (obj.depth * 14) + 'px' }"
+           class="py-0.5 border-t border-slate-800/40 flex items-center gap-1 text-slate-300">
+        <span class="text-slate-600 select-none">{{ obj.depth > 0 ? '└' : '▸' }}</span>
+        <span>{{ obj.name }}</span>
+      </div>
+    </div>
+    <div v-else-if="insp.objectsLoaded" class="text-slate-600 text-xs">No objects found.</div>
   </div>
 </div>
 
@@ -123,6 +175,96 @@ createApp({
   setup() {
     const state = ref({ apps: [], drivers: [], uptime: 0 });
     const log = ref([]);
+
+    // ── Inspector state ──────────────────────────────────────────────
+    const insp = ref({
+      selectedApp: '',
+      loading: false,
+      phase: '',       // 'scenes' | 'objects'
+      error: null,
+      scenes: [],
+      currentScene: null,
+      rawObjects: [],
+      objectsLoaded: false,
+      flatObjects: [],
+    });
+
+    const inspComputedScene = computed(() => {
+      const cs = insp.value.currentScene;
+      if (!cs) return '';
+      if (typeof cs === 'string') return cs;
+      if (cs && typeof cs === 'object' && 'name' in cs) return cs.name;
+      return JSON.stringify(cs);
+    });
+
+    function buildFlatObjects(objects) {
+      const map = new Map(objects.map(o => [o.id, { ...o, children: [] }]));
+      const roots = [];
+      for (const node of map.values()) {
+        const parent = map.get(node.parentId);
+        if (parent) parent.children.push(node);
+        else roots.push(node);
+      }
+      const flat = [];
+      function walk(nodes, depth) {
+        for (const n of nodes) {
+          flat.push({ id: n.id, name: n.name, depth });
+          walk(n.children, depth + 1);
+        }
+      }
+      walk(roots, 0);
+      return flat;
+    }
+
+    async function inspectScenes() {
+      if (!insp.value.selectedApp || insp.value.loading) return;
+      insp.value.loading = true;
+      insp.value.phase = 'scenes';
+      insp.value.error = null;
+      insp.value.scenes = [];
+      insp.value.currentScene = null;
+      insp.value.rawObjects = [];
+      insp.value.flatObjects = [];
+      insp.value.objectsLoaded = false;
+      try {
+        const r = await fetch(`/inspector/${encodeURIComponent(insp.value.selectedApp)}`);
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        insp.value.scenes = data.scenes ?? [];
+        insp.value.currentScene = data.currentScene ?? null;
+      } catch (e) {
+        insp.value.error = e.message;
+      } finally {
+        insp.value.loading = false;
+        insp.value.phase = '';
+      }
+    }
+
+    async function inspectObjects() {
+      if (!insp.value.selectedApp || insp.value.loading) return;
+      insp.value.loading = true;
+      insp.value.phase = 'objects';
+      insp.value.error = null;
+      try {
+        const r = await fetch(`/inspector/${encodeURIComponent(insp.value.selectedApp)}/objects`);
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        insp.value.rawObjects = data.objects ?? [];
+        insp.value.flatObjects = buildFlatObjects(insp.value.rawObjects);
+        insp.value.objectsLoaded = true;
+      } catch (e) {
+        insp.value.error = e.message;
+      } finally {
+        insp.value.loading = false;
+        insp.value.phase = '';
+      }
+    }
+
+    async function inspectRefresh() {
+      await inspectScenes();
+      if (insp.value.objectsLoaded) await inspectObjects();
+    }
+    // ── end Inspector ────────────────────────────────────────────────
     let es = null;
     let uptimeInterval = null;
 
@@ -197,7 +339,11 @@ createApp({
       clearInterval(uptimeInterval);
     });
 
-    return { state, log, pairedCount, uptimeFormatted, isPaired };
+    return {
+      state, log, pairedCount, uptimeFormatted, isPaired,
+      insp: computed(() => ({ ...insp.value, currentSceneName: inspComputedScene.value })),
+      inspectScenes, inspectObjects, inspectRefresh,
+    };
   }
 }).mount('#app');
 </script>

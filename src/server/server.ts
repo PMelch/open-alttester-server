@@ -1,6 +1,8 @@
 import type { ServerWebSocket } from "bun";
 import { ConnectionRegistry, CloseCode, ClientRole, type WsConn } from "./registry";
 import { DashboardFeed, handleDashboardRequest } from "../web/handler";
+import { InspectorService } from "./inspector";
+import { handleInspectorRequest } from "../web/inspector-handler";
 
 export interface AltTesterServerOptions {
   port: number;
@@ -45,12 +47,13 @@ export async function createAltTesterServer(
   const registry = new ConnectionRegistry();
   const feed = new DashboardFeed();
   feed.startHeartbeat(opts.heartbeatMs);
+  const inspector = new InspectorService();
   const startTime = Date.now();
 
   const server = Bun.serve<WsData>({
     port: opts.port,
 
-    fetch(req, server) {
+    async fetch(req, server) {
       const url = new URL(req.url);
       const params = url.searchParams;
       const appName = params.get("appName") ?? "__default__";
@@ -72,6 +75,10 @@ export async function createAltTesterServer(
       // Dashboard HTTP routes
       const dashResponse = handleDashboardRequest(req, registry, feed, startTime);
       if (dashResponse) return dashResponse;
+
+      // Inspector HTTP routes
+      const inspectorResponse = await handleInspectorRequest(req, registry, inspector);
+      if (inspectorResponse) return inspectorResponse;
 
       return new Response("Not found", { status: 404 });
     },
@@ -106,6 +113,12 @@ export async function createAltTesterServer(
       },
 
       message(ws: ServerWebSocket<WsData>, msg: string | Buffer) {
+        // Inspector intercept: app responses for synthetic inspector commands
+        // must not be forwarded to the paired driver.
+        if (ws.data.role === "app") {
+          const raw = typeof msg === "string" ? msg : msg.toString();
+          if (inspector.tryConsume(raw)) return;
+        }
         const peer = registry.getPeer(ws) as ServerWebSocket<WsData> | undefined;
         if (!peer) return;
         peer.send(msg);

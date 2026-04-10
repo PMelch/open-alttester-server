@@ -1,0 +1,52 @@
+import type { ConnectionRegistry } from "../server/registry";
+import type { InspectorService } from "../server/inspector";
+
+export async function handleInspectorRequest(
+  req: Request,
+  registry: ConnectionRegistry,
+  inspector: InspectorService,
+): Promise<Response | null> {
+  const url = new URL(req.url);
+  const match = url.pathname.match(/^\/inspector\/([^/]+)(\/objects)?$/);
+  if (!match) return null;
+
+  const appName = decodeURIComponent(match[1]);
+  const isObjects = !!match[2];
+
+  const appWs = registry.getApp(appName);
+  if (!appWs) {
+    return new Response(JSON.stringify({ error: `No app connected with appName "${appName}"` }), {
+      status: 404,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+
+  try {
+    if (isObjects) {
+      const objects = await inspector.send(appWs, "findObjects", {
+        by: "PATH",
+        value: "//",
+        cameraBy: "NAME",
+        cameraValue: "",
+        enabled: true,
+      });
+      return new Response(JSON.stringify({ objects }), {
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      });
+    }
+
+    const [scenes, currentScene] = await Promise.all([
+      inspector.send(appWs, "getAllLoadedScenes", {}),
+      inspector.send(appWs, "getCurrentScene", {}),
+    ]);
+    return new Response(JSON.stringify({ scenes, currentScene }), {
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json; charset=utf-8" },
+    });
+  }
+}
