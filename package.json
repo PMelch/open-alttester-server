@@ -1,10 +1,10 @@
 {
   "name": "open-alttester-server",
   "version": "0.1.0",
-  "description": "Open-source AltTester Desktop replacement — Bun-based WebSocket server and web dashboard",
+  "description": "Open-source AltTester Desktop replacement — node-based WebSocket server and web dashboard",
   "type": "module",
   "license": "MIT",
-  "keywords": ["alttester", "unity", "testing", "websocket", "bun", "cli", "game-testing"],
+  "keywords": ["alttester", "unity", "testing", "websocket", "bun", "cli", "game-testing", "node"],
   "repository": {
     "type": "git",
     "url": "https://github.com/pmelc/open-alttester-server.git"
@@ -18,7 +18,9 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "readme": "README.npm.md",
   "files": [
+    "README.npm.md",
     "src/index.ts",
     "src/cli.ts",
     "src/server/inspector.ts",
