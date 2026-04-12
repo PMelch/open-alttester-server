@@ -4,31 +4,40 @@ Open-source replacement for the AltTester Desktop app. Provides the WebSocket se
 
 ## Requirements
 
-- [Bun](https://bun.sh) ≥ 1.0
+- [Bun](https://bun.sh) ≥ 1.0, or Node.js ≥ 18
 
 ---
 
 ## Quick start (from npm)
 
-No clone required — run directly with `bunx`:
+No clone required — run directly:
 
 ```bash
+# Bun
 bunx open-alttester-server
+
+# Node
+npx open-alttester-server
 ```
 
 Or install globally and run as a command:
 
 ```bash
+# Bun
 bun install -g open-alttester-server
+
+# Node
+npm install -g open-alttester-server
+
 open-alttester-server
 ```
 
 Custom port:
 
 ```bash
-bunx open-alttester-server --port 9000
+open-alttester-server --port 9000
 # or
-ALTSERVER_PORT=9000 bunx open-alttester-server
+ALTSERVER_PORT=9000 open-alttester-server
 ```
 
 ---
