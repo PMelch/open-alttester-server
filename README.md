@@ -4,7 +4,9 @@ Open-source replacement for the AltTester Desktop app. Provides the WebSocket se
 
 ## Requirements
 
-- [Bun](https://bun.sh) ≥ 1.0, or Node.js ≥ 18
+- [Bun](https://bun.sh) ≥ 1.0 (**required** — Node.js is not supported)
+
+> The server is built on `Bun.serve`, which provides the integrated HTTP + WebSocket handling in a single runtime call. There is no Node.js equivalent without replacing the entire server layer, so Bun is a hard runtime requirement.
 
 ---
 
@@ -13,21 +15,13 @@ Open-source replacement for the AltTester Desktop app. Provides the WebSocket se
 No clone required — run directly:
 
 ```bash
-# Bun
 bunx open-alttester-server
-
-# Node
-npx open-alttester-server
 ```
 
 Or install globally and run as a command:
 
 ```bash
-# Bun
 bun install -g open-alttester-server
-
-# Node
-npm install -g open-alttester-server
 
 open-alttester-server
 ```
