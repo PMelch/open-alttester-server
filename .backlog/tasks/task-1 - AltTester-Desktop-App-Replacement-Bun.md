@@ -1,14 +1,14 @@
 ---
 id: TASK-1
 title: AltTester Desktop App Replacement (Bun)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-04-10 05:31'
+updated_date: '2026-04-13 07:12'
 labels: []
 dependencies: []
 priority: high
 ---
-
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->

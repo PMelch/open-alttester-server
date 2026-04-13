@@ -10,9 +10,9 @@ export const enum ClientRole {
   Driver = "driver",
 }
 
-/** Minimal interface satisfied by both ServerWebSocket (server) and mock sockets (tests). */
+/** Minimal interface satisfied by BunWsHandle, NodeWsHandle, and mock sockets (tests). */
 export interface WsConn {
-  send(data: string | ArrayBufferLike | ArrayBufferView | Bun.BufferSource): void;
+  send(data: string | ArrayBuffer | ArrayBufferView): void;
   close(code?: number, reason?: string): void;
   readonly readyState: number;
 }

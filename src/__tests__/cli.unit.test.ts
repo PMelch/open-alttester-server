@@ -1,5 +1,12 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { resolvePort, runCli } from "../cli.ts";
+
+const { version: PACKAGE_VERSION } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf8"),
+) as { version: string };
 
 describe("resolvePort", () => {
   it("returns 13000 when no args and no env", () => {
@@ -49,13 +56,49 @@ describe("resolvePort", () => {
 
 describe("runCli", () => {
   it("starts the server on the port resolved from argv and returns the server instance", async () => {
-    const server = await runCli(["--port", "13901"], {});
+    const logged: string[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => { logged.push(args.map(String).join(" ")); origLog(...args); };
+
+    let server: Awaited<ReturnType<typeof runCli>>;
     try {
-      expect(server.port).toBe(13901);
-      const res = await fetch(`http://127.0.0.1:${server.port}/`);
-      expect(res.status).toBe(200);
+      server = await runCli(["--port", "13901"], {});
     } finally {
-      server.stop();
+      console.log = origLog;
     }
+
+    try {
+      expect(server!.port).toBe(13901);
+      const res = await fetch(`http://127.0.0.1:${server!.port}/`);
+      expect(res.status).toBe(200);
+      expect(logged[0]).toBe(`Open AltTester Server ${PACKAGE_VERSION}`);
+    } finally {
+      server!.stop();
+    }
+  });
+
+  it('prints the version and exits 0 when argv is ["version"]', async () => {
+    const logged: string[] = [];
+    const origLog = console.log;
+    console.log = (...args: unknown[]) => { logged.push(args.map(String).join(" ")); };
+
+    let exitCode: number | undefined;
+    const mockExit = (code: number): never => {
+      exitCode = code;
+      throw new Error("exit");
+    };
+
+    try {
+      await runCli(["version"], {}, mockExit);
+    } catch {
+      // swallow the thrown "exit" sentinel
+    } finally {
+      console.log = origLog;
+    }
+
+    expect(exitCode).toBe(0);
+    expect(logged).toHaveLength(1);
+    expect(logged[0]).toBe(PACKAGE_VERSION);
+    expect(logged[0]).not.toMatch(/^Open AltTester Server/);
   });
 });

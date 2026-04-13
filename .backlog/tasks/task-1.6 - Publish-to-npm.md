@@ -1,17 +1,16 @@
 ---
 id: TASK-1.6
 title: Publish to npm
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-04-10 06:47'
-updated_date: '2026-04-10 13:48'
+updated_date: '2026-04-13 07:13'
 labels: []
 dependencies:
   - TASK-1.4
 parent_task_id: TASK-1
 priority: medium
 ---
-
 ## Description
 
 <!-- SECTION:DESCRIPTION:BEGIN -->

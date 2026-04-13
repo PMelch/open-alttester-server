@@ -26,7 +26,10 @@
 
 <div id="app">
   <header class="mb-6 flex items-center justify-between">
-    <h1 class="text-2xl font-semibold text-sky-400">AltTester Server</h1>
+    <div class="flex items-baseline gap-3">
+      <h1 class="text-2xl font-semibold text-sky-400">AltTester Server</h1>
+      <span v-if="state.version" class="text-sm text-slate-500">v{{ state.version }}</span>
+    </div>
     <span class="text-sm text-slate-500">Uptime: {{ uptimeFormatted }}</span>
   </header>
 
@@ -180,7 +183,7 @@ import { createApp, ref, computed, watch, onMounted, onUnmounted } from 'vue';
 
 createApp({
   setup() {
-    const state = ref({ apps: [], drivers: [], uptime: 0 });
+    const state = ref({ apps: [], drivers: [], uptime: 0, version: '' });
     const log = ref([]);
 
     // ── Inspector state ──────────────────────────────────────────────

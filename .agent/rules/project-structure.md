@@ -2,30 +2,37 @@
 
 ## Runtime & Language
 
-- **Runtime**: Bun (not Node.js directly)
+- **Runtimes**: Bun ≥ 1.0 **and** Node.js ≥ 20.0 — both fully supported
 - **Language**: TypeScript (strict mode)
+- **Runtime adapter**: `ServerAdapter` interface with `BunServerAdapter` (Bun.serve) and `NodeServerAdapter` (node:http + ws); auto-detected at startup via `createAltTesterServer()`
 - **Frontend framework**: Vue 3 (for all web UI — dashboard and inspector)
 - **CSS framework**: Tailwind CSS
-- **Bundler**: Bun's built-in bundler (`Bun.build`) for the frontend; server-side TypeScript run directly by Bun
+- **Bundler**: Bun's built-in bundler for the frontend; server-side TypeScript run directly by Bun or via tsx on Node.js
 
 ## Directory Layout
 
 ```
-alt-tester-desktop-alt/
+open-alttester-server/
   src/
     index.ts              # Entry point — starts server + HTTP
+    cli.ts                # CLI argument parsing
     server/               # WebSocket server (AltTester protocol)
+      adapter.ts          # ServerAdapter interface (runtime-agnostic)
+      adapters/
+        bun.ts            # BunServerAdapter (Bun.serve)
+        node.ts           # NodeServerAdapter (node:http + ws)
       registry.ts         # ConnectionRegistry: tracks apps and drivers
-      router.ts           # Message routing between paired clients
-      server.ts           # Bun.serve() setup, WS upgrade handling
+      server.ts           # createAltTesterServer() — auto-selects adapter
+      inspector.ts        # Inspector service (synthetic driver)
       __tests__/
     web/                  # Dashboard HTTP + live-update feed
-      handler.ts          # HTTP request handler (serves HTML, SSE/WS feed)
+      handler.ts          # HTTP request handler (serves HTML, SSE feed)
+      inspector-handler.ts
       dashboard.html      # Single-file dashboard page
       __tests__/
-    inspector/            # Inspector: synthetic driver for scene queries
-      inspector.ts
-      __tests__/
+  bin/
+    open-alttester-server.ts  # Bun CLI entry (#!/usr/bin/env bun)
+    open-alttester-server.js  # Node.js CLI wrapper (#!/usr/bin/env node)
   .agent/
     docs/                 # Protocol and design documentation
     rules/                # Process rules for agents
@@ -36,12 +43,16 @@ alt-tester-desktop-alt/
 
 ## Scripts (package.json)
 
-| Script | Command |
-|--------|---------|
-| `bun run dev` | `bun --watch src/index.ts` |
-| `bun run start` | `bun src/index.ts` |
-| `bun test` | `bun test` |
-| `bun test --watch` | `bun test --watch` |
+| Script | Command | Runtime |
+|--------|---------|---------|
+| `npm start` | `tsx src/index.ts` | Node.js |
+| `npm run start:bun` | `bun src/index.ts` | Bun |
+| `npm test` | `vitest run` | Node.js (cross-runtime) |
+| `npm run test:watch` | `vitest` | Node.js |
+| `npm run test:bun` | `bun test` | Bun |
+| `npm run dev` | `bun --watch src/index.ts` | Bun |
+| `npm run typecheck` | `tsc --project tsconfig.node.json --noEmit` | Node.js |
+| `npm run typecheck:bun` | `tsc --project tsconfig.bun.json --noEmit` | Bun |
 
 ## Environment Variables
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "bun:test";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { InspectorService } from "../inspector";
 import type { WsConn } from "../registry";
 
@@ -37,12 +37,6 @@ describe("InspectorService", () => {
     });
 
     it("returns true and removes the pending entry when messageId matches", async () => {
-      const { ws } = makeMockWs();
-      const promise = svc.send(ws, "getServerVersion", {}, 1000);
-
-      // Capture the messageId from what was sent to the mock ws
-      const { sent } = makeMockWs();
-      // Re-run with the real ws to get the messageId
       const { ws: ws2, sent: sent2 } = makeMockWs();
       const p2 = svc.send(ws2, "getServerVersion", {}, 1000);
       const cmd2 = JSON.parse(sent2[0]);
@@ -57,6 +51,7 @@ describe("InspectorService", () => {
 
   describe("send", () => {
     it("sends correctly shaped JSON to the app WebSocket", () => {
+      vi.useFakeTimers();
       const { ws, sent } = makeMockWs();
       svc.send(ws, "getAllLoadedScenes", {}, 1000).catch(() => {});
 
@@ -67,9 +62,12 @@ describe("InspectorService", () => {
       expect(cmd.messageId.length).toBeGreaterThan(0);
       // parameters spread flat — no "parameters" wrapper key
       expect(cmd.parameters).toBeUndefined();
+      vi.runAllTimers();
+      vi.useRealTimers();
     });
 
     it("includes provided parameters in the command as flat top-level fields", () => {
+      vi.useFakeTimers();
       const { ws, sent } = makeMockWs();
       svc.send(ws, "findObjects", { path: "//*", cameraBy: "NAME", cameraPath: "//", enabled: true }, 1000).catch(() => {});
       const cmd = JSON.parse(sent[0]);
@@ -78,15 +76,20 @@ describe("InspectorService", () => {
       expect(cmd.cameraBy).toBe("NAME");
       expect(cmd.cameraPath).toBe("//");
       expect(cmd.enabled).toBe(true);
+      vi.runAllTimers();
+      vi.useRealTimers();
     });
 
     it("uses unique messageIds for concurrent requests", () => {
+      vi.useFakeTimers();
       const { ws, sent } = makeMockWs();
       svc.send(ws, "cmd1", {}, 1000).catch(() => {});
       svc.send(ws, "cmd2", {}, 1000).catch(() => {});
       const id1 = JSON.parse(sent[0]).messageId;
       const id2 = JSON.parse(sent[1]).messageId;
       expect(id1).not.toBe(id2);
+      vi.runAllTimers();
+      vi.useRealTimers();
     });
 
     it("resolves with the parsed data on a successful response", async () => {

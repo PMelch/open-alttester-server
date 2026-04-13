@@ -1,8 +1,15 @@
 /**
  * BDD tests for the web dashboard (Vue 3 + Tailwind, served as static HTML).
  */
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createAltTesterServer, type AltTesterServer } from "../../server/server";
+
+const { version: PACKAGE_VERSION } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../package.json"), "utf8"),
+) as { version: string };
 
 describe("Feature: Web dashboard", () => {
   let srv: AltTesterServer;
@@ -30,6 +37,14 @@ describe("Feature: Web dashboard", () => {
     });
   });
 
+  describe("Scenario: Dashboard HTML contains version display binding", () => {
+    it("Given the server is running / When GET / is requested / Then the HTML includes the version template binding", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+      expect(html).toContain("state.version");
+    });
+  });
+
   describe("Scenario: State endpoint returns current connection counts", () => {
     it("Given a Unity app is connected / When GET /dashboard/state is requested / Then JSON reflects the live count", async () => {
       const app = new WebSocket(appUrl(srv.port, "StatGame"));
@@ -38,10 +53,11 @@ describe("Feature: Web dashboard", () => {
       const res = await fetch(`http://127.0.0.1:${srv.port}/dashboard/state`);
       expect(res.status).toBe(200);
       expect(res.headers.get("content-type")).toMatch(/application\/json/);
-      const body = await res.json() as { apps: unknown[]; drivers: unknown[]; uptime: number };
+      const body = await res.json() as { apps: unknown[]; drivers: unknown[]; uptime: number; version: string };
       expect(body.apps).toHaveLength(1);
       expect(body.drivers).toHaveLength(0);
       expect(typeof body.uptime).toBe("number");
+      expect(body.version).toBe(PACKAGE_VERSION);
 
       app.close();
     });
@@ -54,16 +70,19 @@ describe("Feature: Web dashboard", () => {
       // headers immediately. Waiting for it guarantees the SSE reader is active
       // before we trigger the appConnected event.
       const { lines, cancel } = openSseStreamRaw(srv.port, "/dashboard/events");
-      await waitForRawLine(lines, ": keepalive", 500);
+      try {
+        await waitForRawLine(lines, ": keepalive", 500);
 
-      const app = new WebSocket(appUrl(srv.port, "LiveGame"));
-      await wsOpen(app);
+        const app = new WebSocket(appUrl(srv.port, "LiveGame"));
+        await wsOpen(app);
 
-      await waitForRawLine(lines, "event: appConnected", 2000);
-      expect(lines.some(l => l.includes("LiveGame"))).toBe(true);
+        await waitForRawLine(lines, "event: appConnected", 2000);
+        expect(lines.some(l => l.includes("LiveGame"))).toBe(true);
 
-      cancel();
-      app.close();
+        app.close();
+      } finally {
+        cancel();
+      }
     });
   });
 
@@ -73,13 +92,15 @@ describe("Feature: Web dashboard", () => {
       await wsOpen(app);
 
       const { events, cancel } = openSseStream(srv.port, "/dashboard/events");
-      await waitMs(30);
+      try {
+        await waitMs(30);
 
-      app.close();
-      await waitForEvent(events, "appDisconnected", 2000);
-      expect(events.some(e => e.event === "appDisconnected" && e.data.includes("GoneGame"))).toBe(true);
-
-      cancel();
+        app.close();
+        await waitForEvent(events, "appDisconnected", 2000);
+        expect(events.some(e => e.event === "appDisconnected" && e.data.includes("GoneGame"))).toBe(true);
+      } finally {
+        cancel();
+      }
     });
   });
 
@@ -90,17 +111,20 @@ describe("Feature: Web dashboard", () => {
       await waitMs(30);
 
       const { events, cancel } = openSseStream(srv.port, "/dashboard/events");
-      await waitMs(30);
+      try {
+        await waitMs(30);
 
-      const driver = new WebSocket(driverUrl(srv.port, "DriverGame"));
-      await wsOpen(driver);
+        const driver = new WebSocket(driverUrl(srv.port, "DriverGame"));
+        await wsOpen(driver);
 
-      await waitForEvent(events, "driverConnected", 2000);
-      expect(events.some(e => e.event === "driverConnected" && e.data.includes("DriverGame"))).toBe(true);
+        await waitForEvent(events, "driverConnected", 2000);
+        expect(events.some(e => e.event === "driverConnected" && e.data.includes("DriverGame"))).toBe(true);
 
-      cancel();
-      app.close();
-      driver.close();
+        app.close();
+        driver.close();
+      } finally {
+        cancel();
+      }
     });
   });
   describe("Scenario: SSE heartbeat keeps connection alive", () => {
@@ -128,14 +152,17 @@ describe("Feature: Web dashboard", () => {
       await waitMs(30);
 
       const { events, cancel } = openSseStream(srv.port, "/dashboard/events");
-      await waitMs(30);
+      try {
+        await waitMs(30);
 
-      driver.close();
-      await waitForEvent(events, "driverDisconnected", 2000);
-      expect(events.some(e => e.event === "driverDisconnected" && e.data.includes("DiscoDriver"))).toBe(true);
+        driver.close();
+        await waitForEvent(events, "driverDisconnected", 2000);
+        expect(events.some(e => e.event === "driverDisconnected" && e.data.includes("DiscoDriver"))).toBe(true);
 
-      cancel();
-      app.close();
+        app.close();
+      } finally {
+        cancel();
+      }
     });
   });
 });

@@ -6,7 +6,7 @@
  *   /altws/app  → Unity SDK app connections (RuntimeWebSocketClient)
  *   /altws      → test driver connections (Python AltDriver, C# DriverWebSocketClient)
  */
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createAltTesterServer, type AltTesterServer } from "../server";
 
 describe("Feature: AltTester server connection management", () => {
@@ -25,7 +25,7 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: Unity app registers with server", () => {
     it("Given the server is running / When a Unity app connects / Then the server lists it as connected", async () => {
       const app = await connectApp(srv.port, "MyGame");
-      await waitMs(50);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
       expect(srv.registry.hasApp("MyGame")).toBe(true);
       app.close();
     });
@@ -34,7 +34,7 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: Driver pairs with Unity app and receives driverRegistered", () => {
     it("Given a Unity app is connected / When a driver connects / Then driver receives driverRegistered notification", async () => {
       const app = await connectApp(srv.port, "MyGame");
-      await waitMs(50);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
 
       const messages: string[] = [];
       const driver = await connectDriver(srv.port, "MyGame", { onMessage: (msg) => messages.push(msg) });
@@ -51,7 +51,7 @@ describe("Feature: AltTester server connection management", () => {
     it("Given a paired session / When driver sends a command / Then app receives it verbatim", async () => {
       const appMessages: string[] = [];
       const app = await connectApp(srv.port, "MyGame", { onMessage: (m) => appMessages.push(m) });
-      await waitMs(50);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
 
       const driver = await connectDriver(srv.port, "MyGame");
       await waitForCondition(() => srv.registry.isPaired("MyGame"), 1000);
@@ -70,7 +70,7 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: Message relay app → driver", () => {
     it("Given a paired session / When app sends a response / Then driver receives it verbatim", async () => {
       const app = await connectApp(srv.port, "MyGame");
-      await waitMs(50);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
 
       const driverMessages: string[] = [];
       const driver = await connectDriver(srv.port, "MyGame", { onMessage: (m) => driverMessages.push(m) });
@@ -97,7 +97,7 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: Close code 4005 — duplicate driver", () => {
     it("Given an app and driver are paired / When a second driver connects / Then second driver receives close code 4005", async () => {
       const app = await connectApp(srv.port, "MyGame");
-      await waitMs(30);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
       // R1-6: use distinct deviceInstanceIds for the two drivers
       const driver1 = await connectDriver(srv.port, "MyGame", { deviceInstanceId: "d1" });
       await waitForCondition(() => srv.registry.isPaired("MyGame"), 1000);
@@ -113,7 +113,7 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: Close code 4002 — app disconnects mid-session", () => {
     it("Given a paired session / When the app disconnects / Then the driver receives close code 4002", async () => {
       const app = await connectApp(srv.port, "MyGame");
-      await waitMs(30);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
 
       let driverCloseCode = 0;
       const driverClosed = new Promise<void>((resolve) => {
@@ -135,7 +135,7 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: Close code 4007 — concurrent driver connections", () => {
     it("Given an app is connected and a driver is pending / When another driver connects / Then it receives close code 4007", async () => {
       const app = await connectApp(srv.port, "PendingGame");
-      await waitMs(30);
+      await waitForCondition(() => srv.registry.hasApp("PendingGame"), 1000);
 
       // Inject a fake pending driver — simulates a driver mid-handshake
       const fakePending = { send: () => {}, close: () => {}, readyState: 1 };
@@ -153,7 +153,7 @@ describe("Feature: AltTester server connection management", () => {
     it("Given a paired session / When the driver disconnects / Then the app receives a driverDisconnected notification", async () => {
       const appMessages: string[] = [];
       const app = await connectApp(srv.port, "MyGame", { onMessage: (m) => appMessages.push(m) });
-      await waitMs(30);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
 
       const driver = await connectDriver(srv.port, "MyGame", { deviceInstanceId: "d1" });
       await waitForCondition(() => srv.registry.isPaired("MyGame"), 1000);
@@ -170,13 +170,13 @@ describe("Feature: AltTester server connection management", () => {
   describe("Scenario: App re-registers — stale state is cleared", () => {
     it("Given a paired session / When the app re-connects / Then the old pairing is gone and registry is clean", async () => {
       const app1 = await connectApp(srv.port, "MyGame");
-      await waitMs(30);
+      await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
       const driver = await connectDriver(srv.port, "MyGame", { deviceInstanceId: "d1" });
       await waitForCondition(() => srv.registry.isPaired("MyGame"), 1000);
 
       // App reconnects (simulated: close old socket, connect new one)
       app1.close();
-      await waitMs(50);
+      await waitForCondition(() => !srv.registry.hasApp("MyGame"), 1000);
 
       // The old pairing should be gone now (app removed via close handler)
       expect(srv.registry.isPaired("MyGame")).toBe(false);
@@ -234,10 +234,6 @@ function getCloseCode(port: number, path: string, params: Record<string, string>
     ws.onerror = () => {};
     ws.onopen = () => {};
   });
-}
-
-function waitMs(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
 }
 
 function waitForCondition(fn: () => boolean, timeoutMs: number): Promise<void> {

@@ -1,4 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createAltTesterServer, type AltTesterServer } from "./server/server.ts";
+
+const { version: VERSION } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../package.json"), "utf8"),
+) as { version: string };
 
 /**
  * Resolve the server port from CLI argv and environment variables.
@@ -34,10 +41,17 @@ export function resolvePort(
 export async function runCli(
   argv: string[],
   env: Record<string, string | undefined>,
+  exit: (code: number) => never = (code) => process.exit(code),
 ): Promise<AltTesterServer> {
+  if (argv[0] === "version") {
+    console.log(`v${VERSION}`);
+    exit(0);
+  }
+
   const port = resolvePort(argv, env);
   const server = await createAltTesterServer({ port });
 
+  console.log(`Open AltTester Server v${VERSION}`);
   console.log(`AltTester Server running on port ${server.port}`);
   console.log(`Dashboard:            http://127.0.0.1:${server.port}/`);
   console.log(`Unity apps:           ws://127.0.0.1:${server.port}/altws/app`);

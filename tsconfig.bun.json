@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun-types", "node"]
+  },
+  "include": ["src/**/*", "bin/**/*"],
+  "exclude": ["node_modules", "AltTester-Unity-SDK"]
+}

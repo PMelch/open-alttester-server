@@ -1,8 +1,17 @@
-import { readFileSync } from "fs";
-import { join } from "path";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { ConnectionRegistry } from "../server/registry";
 
-const DASHBOARD_HTML = readFileSync(join(import.meta.dir, "dashboard.html"), "utf8");
+const { version: SERVER_VERSION } = JSON.parse(
+  readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../package.json"), "utf8"),
+) as { version: string };
+
+// import.meta.dir is Bun-specific; fileURLToPath(new URL('.', import.meta.url)) works on both runtimes.
+const DASHBOARD_HTML = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), "dashboard.html"),
+  "utf8",
+);
 
 export type DashboardEvent =
   | { type: "appConnected"; appName: string; platform: string; platformVersion: string; deviceInstanceId: string }
@@ -86,6 +95,7 @@ export function handleDashboardRequest(
       apps: registry.connectedApps(),
       drivers: registry.connectedDrivers(),
       uptime: (Date.now() - startTime) / 1000,
+      version: SERVER_VERSION,
     };
     return new Response(JSON.stringify(state), {
       headers: { "Content-Type": "application/json; charset=utf-8" },

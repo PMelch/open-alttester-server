@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: ${{ matrix.runtime }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runtime: node-20
+            node-version: "20"
+          - runtime: node-22
+            node-version: "22"
+          - runtime: bun-latest
+            bun-version: latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node-version }}
+        if: matrix.node-version != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Set up Bun ${{ matrix.bun-version }}
+        if: matrix.bun-version != ''
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ matrix.bun-version }}
+
+      - name: Install dependencies (Node.js)
+        if: matrix.node-version != ''
+        run: npm ci
+
+      - name: Install dependencies (Bun)
+        if: matrix.bun-version != ''
+        run: bun install
+
+      - name: Type-check (Node.js)
+        if: matrix.node-version != ''
+        run: npm run typecheck
+
+      - name: Type-check (Bun)
+        if: matrix.bun-version != ''
+        run: bun run typecheck:bun
+
+      - name: Test (Node.js)
+        if: matrix.node-version != ''
+        run: npm test
+
+      - name: Test (Bun)
+        if: matrix.bun-version != ''
+        run: bun run test:bun

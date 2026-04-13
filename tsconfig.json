@@ -5,8 +5,15 @@
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
-    "types": ["bun-types"]
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
   },
-  "include": ["src/**/*", "bin/**/*"],
-  "exclude": ["node_modules", "AltTester-Unity-SDK"]
+  "include": ["src/**/*"],
+  "exclude": [
+    "node_modules",
+    "AltTester-Unity-SDK",
+    "src/**/__tests__/**",
+    "bin/**"
+  ]
 }

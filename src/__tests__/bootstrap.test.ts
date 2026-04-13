@@ -1,8 +1,10 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect } from "vitest";
 import { existsSync } from "fs";
-import { join } from "path";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
 
-const root = join(import.meta.dir, "../..");
+// import.meta.dir is Bun-specific; fileURLToPath works on both runtimes.
+const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
 
 describe("Project bootstrap", () => {
   it("src/index.ts exists", () => {

@@ -2,7 +2,7 @@
  * BDD tests for the Inspector HTTP endpoints.
  * A mock Unity app WebSocket auto-responds to inspector commands.
  */
-import { describe, it, expect, beforeEach, afterEach } from "bun:test";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { createAltTesterServer, type AltTesterServer } from "../server";
 
 describe("Feature: Inspector", () => {
@@ -173,7 +173,7 @@ describe("Feature: Inspector", () => {
         } catch {}
       };
       driver.send(JSON.stringify({ commandName: "ping", messageId: "42", parameters: {} }));
-      await waitMs(100);
+      await waitForCondition(() => driverReceived.length > 0, 1000);
       expect(driverReceived).toHaveLength(1);
       expect(JSON.parse(driverReceived[0]).commandName).toBe("ping");
 
@@ -181,7 +181,7 @@ describe("Feature: Inspector", () => {
       const driverIncoming: string[] = [];
       driver.onmessage = (e: MessageEvent) => { driverIncoming.push(e.data as string); };
       app.send(JSON.stringify({ commandName: "notification", messageId: "app-1", data: "{}" }));
-      await waitMs(100);
+      await waitForCondition(() => driverIncoming.length > 0, 1000);
       expect(driverIncoming.length).toBeGreaterThan(0);
       expect(JSON.parse(driverIncoming[0]).commandName).toBe("notification");
 
@@ -210,8 +210,16 @@ function wsOpen(ws: WebSocket): Promise<void> {
   });
 }
 
-function waitMs(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+function waitForCondition(fn: () => boolean, timeoutMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const check = () => {
+      if (fn()) return resolve();
+      if (Date.now() - start >= timeoutMs) return reject(new Error(`waitForCondition timed out after ${timeoutMs}ms`));
+      setTimeout(check, 10);
+    };
+    check();
+  });
 }
 
 type MockResponses = Record<string, unknown>;

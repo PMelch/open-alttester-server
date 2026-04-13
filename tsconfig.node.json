@@ -1,0 +1,18 @@
+{
+  // Node.js typecheck configuration.
+  // Uses moduleResolution: bundler (same as the base) because the source files
+  // use .ts import extensions throughout — switching to nodenext would require
+  // adding .js extensions to every relative import.  The bundler setting works
+  // correctly with noEmit + allowImportingTsExtensions and is consistent with
+  // tsx's resolution behaviour at runtime.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true
+  },
+  "include": ["src/**/*", "bin/**/*"],
+  "exclude": [
+    "node_modules",
+    "AltTester-Unity-SDK",
+    "src/**/__tests__/**"
+  ]
+}

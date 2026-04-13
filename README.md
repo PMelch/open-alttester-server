@@ -4,26 +4,31 @@ Open-source replacement for the AltTester Desktop app. Provides the WebSocket se
 
 ## Requirements
 
-- [Bun](https://bun.sh) ≥ 1.0 (**required** — Node.js is not supported)
+- **Node.js** ≥ 20.6 — or — **[Bun](https://bun.sh)** ≥ 1.0
 
-> The server is built on `Bun.serve`, which provides the integrated HTTP + WebSocket handling in a single runtime call. There is no Node.js equivalent without replacing the entire server layer, so Bun is a hard runtime requirement.
+Both runtimes are fully supported. The server auto-detects the runtime at startup and selects the appropriate HTTP/WebSocket adapter.
 
 ---
 
 ## Quick start (from npm)
 
-No clone required — run directly:
+No clone required — run directly with **npm / npx**:
+
+```bash
+npx open-alttester-server
+```
+
+Or install globally:
+
+```bash
+npm install -g open-alttester-server
+open-alttester-server
+```
+
+**Bun** users can use `bunx` / `bun install -g` as before:
 
 ```bash
 bunx open-alttester-server
-```
-
-Or install globally and run as a command:
-
-```bash
-bun install -g open-alttester-server
-
-open-alttester-server
 ```
 
 Custom port:
@@ -41,13 +46,23 @@ ALTSERVER_PORT=9000 open-alttester-server
 ### Install
 
 ```bash
+# Node.js
+npm install
+
+# Bun
 bun install
 ```
 
 ### Start
 
 ```bash
-bun run start
+# Node.js
+npm start            # uses tsx
+
+# Bun (faster startup)
+npm run start:bun    # uses bun directly
+# or
+bun run start:bun
 ```
 
 The server starts on port **13000** by default and prints:
@@ -65,7 +80,7 @@ Open `http://127.0.0.1:13000/` in a browser to see connected apps, drivers, and 
 ### Custom port
 
 ```bash
-ALTSERVER_PORT=9000 bun run start
+ALTSERVER_PORT=9000 npm start
 ```
 
 ### Development (auto-restart on file changes)
@@ -103,33 +118,42 @@ driver = AltDriver(host="127.0.0.1", port=9000)  # custom port
 
 ## Testing the CLI locally (before publishing)
 
-Use `bun link` to register the package globally from your local checkout, then run it exactly as an end-user would via `bunx`:
+**Node.js** — use `npm link`:
 
 ```bash
-# In the project root — registers the package in bun's global bin
-bun link
+npm install
+npm link
 
 # Now test as if installed from npm:
-bunx open-alttester-server
-bunx open-alttester-server --port 9000
+open-alttester-server
+open-alttester-server --port 9000
+
+npm unlink open-alttester-server
 ```
 
-To unlink when you're done:
+**Bun** — use `bun link`:
 
 ```bash
+bun link
+
+bunx open-alttester-server
+bunx open-alttester-server --port 9000
+
 bun unlink open-alttester-server
 ```
-
-`bun link` creates a symlink from the global bun registry to your local `bin/open-alttester-server.ts`, so every code change is reflected immediately — no re-link needed.
 
 ---
 
 ## Tests
 
 ```bash
-bun test            # run all tests once
-bun test --watch    # re-run on file changes
-bun test --coverage # with coverage report
+# Node.js
+npm test                  # vitest (recommended for CI)
+
+# Bun
+npm run test:bun          # bun test
+npm run test:bun:watch    # re-run on file changes
+npm run test:bun:coverage # with coverage report
 ```
 
 ## Environment variables
