@@ -30,7 +30,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
 
       - name: Set up Bun ${{ matrix.bun-version }}
         if: matrix.bun-version != ''

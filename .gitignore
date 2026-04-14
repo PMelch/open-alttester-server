@@ -41,6 +41,11 @@ build/Release
 node_modules/
 jspm_packages/
 
+# npm lockfile — bun.lock is the canonical lockfile for this project;
+# the npm lockfile is generated on the dev's OS and embeds platform-specific
+# optional-dependency entries that break installs on other OSes (npm/cli#4828)
+package-lock.json
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
