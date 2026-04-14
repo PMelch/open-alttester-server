@@ -26,37 +26,48 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Node.js ${{ matrix.node-version }}
-        if: matrix.node-version != ''
+        if: matrix.node-version
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Set up Bun ${{ matrix.bun-version }}
-        if: matrix.bun-version != ''
+        if: matrix.bun-version
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: ${{ matrix.bun-version }}
 
+      # No package-lock.json is committed (bun.lock is canonical); cache
+      # node_modules keyed on package.json instead to avoid cold installs.
+      - name: Cache node_modules (Node.js)
+        if: matrix.node-version
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ matrix.node-version }}-
+
       - name: Install dependencies (Node.js)
-        if: matrix.node-version != ''
+        if: matrix.node-version
         run: npm install
 
       - name: Install dependencies (Bun)
-        if: matrix.bun-version != ''
+        if: matrix.bun-version
         run: bun install
 
       - name: Type-check (Node.js)
-        if: matrix.node-version != ''
+        if: matrix.node-version
         run: npm run typecheck
 
       - name: Type-check (Bun)
-        if: matrix.bun-version != ''
+        if: matrix.bun-version
         run: bun run typecheck:bun
 
       - name: Test (Node.js)
-        if: matrix.node-version != ''
+        if: matrix.node-version
         run: npm test
 
       - name: Test (Bun)
-        if: matrix.bun-version != ''
+        if: matrix.bun-version
         run: bun run test:bun
