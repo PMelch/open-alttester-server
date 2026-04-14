@@ -40,7 +40,7 @@ jobs:
 
       - name: Install dependencies (Node.js)
         if: matrix.node-version != ''
-        run: npm ci
+        run: npm install
 
       - name: Install dependencies (Bun)
         if: matrix.bun-version != ''

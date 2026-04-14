@@ -44,14 +44,14 @@ export async function runCli(
   exit: (code: number) => never = (code) => process.exit(code),
 ): Promise<AltTesterServer> {
   if (argv[0] === "version") {
-    console.log(`v${VERSION}`);
+    console.log(VERSION);
     exit(0);
   }
 
   const port = resolvePort(argv, env);
   const server = await createAltTesterServer({ port });
 
-  console.log(`Open AltTester Server v${VERSION}`);
+  console.log(`Open AltTester Server ${VERSION}`);
   console.log(`AltTester Server running on port ${server.port}`);
   console.log(`Dashboard:            http://127.0.0.1:${server.port}/`);
   console.log(`Unity apps:           ws://127.0.0.1:${server.port}/altws/app`);
