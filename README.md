@@ -8,6 +8,9 @@ Open-source replacement for the AltTester Desktop app. Provides the WebSocket se
 
 Both runtimes are fully supported. The server auto-detects the runtime at startup and selects the appropriate HTTP/WebSocket adapter.
 
+
+![Dashboard](./docs/assets/Screenshot1.png)
+
 ---
 
 ## Quick start (from npm)
