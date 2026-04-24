@@ -2,6 +2,14 @@
 
 Open-source replacement for the AltTester Desktop app. Provides the WebSocket server that bridges Unity SDK apps and Python/C# test drivers, plus a real-time web dashboard.
 
+## Why this project exists
+
+The [AltTester® Unity SDK](https://github.com/alttester/AltTester-Unity-SDK) is open source (GPL v3), but the **AltTester Desktop** app — which acts as the relay between the SDK running in your Unity app and your test drivers — is a paid, closed-source product.
+
+This project is a free, open-source alternative to that Desktop app: a drop-in WebSocket server that speaks the same protocol, so you can run AltTester-based UI automation end to end without a commercial license. The Unity SDK and your existing Python/C#/Java/Robot test drivers connect to this server exactly the way they would connect to the Desktop app.
+
+If you need the extended features that ship with the commercial Desktop app — such as UI test recording and other productivity tooling — please consider purchasing a license from [AltTester](https://alttester.com/) to support the upstream project.
+
 ## Requirements
 
 - **Node.js** ≥ 20.0 — or — **[Bun](https://bun.sh)** ≥ 1.0
