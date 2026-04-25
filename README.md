@@ -1,4 +1,4 @@
-# AltTester Server
+# Open AltTester Server (open-alttester-server)
 
 Open-source replacement for the AltTester Desktop app. Provides the WebSocket server that bridges Unity SDK apps and Python/C# test drivers, plus a real-time web dashboard.
 
