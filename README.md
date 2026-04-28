@@ -17,7 +17,7 @@ If you need the extended features that ship with the commercial Desktop app — 
 Both runtimes are fully supported. The server auto-detects the runtime at startup and selects the appropriate HTTP/WebSocket adapter.
 
 
-![Dashboard](./docs/assets/Screenshot1.png)
+![Dashboard](./docs/assets/Screenshotv0.3.0.png)
 
 ---
 
