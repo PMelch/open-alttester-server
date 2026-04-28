@@ -1,6 +1,6 @@
 {
   "name": "open-alttester-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Open-source AltTester Desktop replacement — WebSocket server and web dashboard for Bun and Node.js",
   "type": "module",
   "license": "MIT",
@@ -28,6 +28,7 @@
   "readme": "README.npm.md",
   "files": [
     "README.npm.md",
+    "CHANGELOG.md",
     "src/index.ts",
     "src/cli.ts",
     "src/server/adapter.ts",

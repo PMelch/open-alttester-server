@@ -172,3 +172,7 @@ npm run test:bun:coverage # with coverage report
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ALTSERVER_PORT` | `13000` | Port for both the WebSocket server and HTTP dashboard |
+
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes.

@@ -86,6 +86,10 @@ driver = AltDriver(host="127.0.0.1", port=9000)  # custom port
 |----------|---------|-------------|
 | `ALTSERVER_PORT` | `13000` | Port for both the WebSocket server and HTTP dashboard |
 
+## Changelog
+
+See [CHANGELOG.md](./CHANGELOG.md) for release notes.
+
 ## License
 
 MIT

@@ -45,6 +45,87 @@ describe("Feature: Web dashboard", () => {
     });
   });
 
+  describe("Scenario: Dashboard exposes professional operations landmarks", () => {
+    it("Given the server is running / When GET / is requested / Then the redesigned UI has named regions for status, inventory, events, and inspector controls", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+
+      expect(html).toContain('aria-label="Server status"');
+      expect(html).toContain('aria-label="Connection inventory"');
+      expect(html).toContain('aria-label="Recent events"');
+      expect(html).toContain('aria-label="Inspector controls"');
+    });
+  });
+
+  describe("Scenario: Dashboard derives WebSocket endpoint from the served host", () => {
+    it("Given the server can run on any port / When GET / is requested / Then the HTML does not hard-code the default endpoint", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+
+      expect(html).toContain("websocketEndpoint");
+      expect(html).not.toContain("ws://127.0.0.1:13000");
+    });
+  });
+
+  describe("Scenario: Dashboard omits redundant section navigation and explanatory copy", () => {
+    it("Given the server is running / When GET / is requested / Then the UI does not render the removed section rail or triage explanation panel", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+
+      expect(html).not.toContain('aria-label="Dashboard sections"');
+      expect(html).not.toContain('href="#server-status"');
+      expect(html).not.toContain("Triage Focus");
+    });
+  });
+
+  describe("Scenario: Dashboard reserves a full-height inspector workspace on wide screens", () => {
+    it("Given the server is running / When GET / is requested / Then the desktop layout separates the primary workspace from the inspector column", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+
+      expect(html).toContain('aria-label="Live dashboard workspace"');
+      expect(html).toContain('aria-label="Inspector workspace"');
+      expect(html).toContain("xl:grid-cols-[minmax(0,1fr)_28rem]");
+    });
+  });
+
+  describe("Scenario: Inspector overflow does not stretch the primary workspace", () => {
+    it("Given the inspector renders a long hierarchy / When the desktop grid lays out the columns / Then the primary workspace keeps its own height", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+
+      expect(html).toContain('aria-label="Live dashboard workspace"');
+      expect(html).toContain('class="grid min-h-0 min-w-0 self-start gap-4"');
+    });
+  });
+
+  describe("Scenario: Inspector filters the object tree by fuzzy node name", () => {
+    it("Given the dashboard loads / When the inspector is rendered / Then it exposes a persistent object filter with a clear control", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+
+      expect(html).toContain('aria-label="Filter object tree"');
+      expect(html).toContain('aria-label="Clear object filter"');
+      expect(html).toContain('v-model="objectFilter"');
+      expect(html).toContain("filteredFlatObjects");
+    });
+
+    it("Given a user enters an abbreviated name / When fuzzy matching runs / Then matching is case-insensitive and ordered by node-name characters", async () => {
+      const res = await fetch(`http://127.0.0.1:${srv.port}/`);
+      const html = await res.text();
+      const fuzzyNodeNameMatches = extractDashboardFunction<(nodeName: string, query: string) => boolean>(
+        html,
+        "fuzzyNodeNameMatches",
+      );
+
+      expect(fuzzyNodeNameMatches("PlayButton", "plbtn")).toBe(true);
+      expect(fuzzyNodeNameMatches("Main Camera", "mc")).toBe(true);
+      expect(fuzzyNodeNameMatches("Main Camera", "CAM")).toBe(true);
+      expect(fuzzyNodeNameMatches("EnemyRoot", "cam")).toBe(false);
+      expect(fuzzyNodeNameMatches("Canvas", "")).toBe(true);
+    });
+  });
+
   describe("Scenario: State endpoint returns current connection counts", () => {
     it("Given a Unity app is connected / When GET /dashboard/state is requested / Then JSON reflects the live count", async () => {
       const app = new WebSocket(appUrl(srv.port, "StatGame"));
@@ -278,4 +359,28 @@ function waitForRawLine(lines: string[], prefix: string, timeoutMs: number): Pro
     };
     check();
   });
+}
+
+function extractDashboardFunction<T extends (...args: never[]) => unknown>(html: string, name: string): T {
+  const functionStart = html.indexOf(`function ${name}`);
+  if (functionStart === -1) {
+    throw new Error(`Function ${name} not found in dashboard HTML`);
+  }
+
+  const bodyStart = html.indexOf("{", functionStart);
+  if (bodyStart === -1) {
+    throw new Error(`Function ${name} has no body`);
+  }
+
+  let depth = 0;
+  for (let i = bodyStart; i < html.length; i += 1) {
+    if (html[i] === "{") depth += 1;
+    if (html[i] === "}") depth -= 1;
+    if (depth === 0) {
+      const source = html.slice(functionStart, i + 1);
+      return new Function(`${source}; return ${name};`)() as T;
+    }
+  }
+
+  throw new Error(`Function ${name} body was not closed`);
 }
