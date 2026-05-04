@@ -12,7 +12,7 @@
 export interface WsData {
   params: URLSearchParams;
   appName: string;
-  role: "app" | "driver";
+  role: "app" | "driver" | "live-update-app";
 }
 
 /**

@@ -35,7 +35,7 @@ ws[s]://<host>:<port><path>?appName=<name>&platform=<p>&platformVersion=<v>&devi
 - Default port: **13000** (override via `ALTSERVER_PORT` env var)
 - Unity app path: **`/altws/app`** (from `BaseCommunicationHandler` → `private readonly string path = "/altws/app"`)
 - Driver path: **`/altws`** (from `DriverWebSocketClient` hardcoded `"/altws"`, Python: `path="altws"`)
-- Live-update path: **`/altws/live-update/app`** (not required for server replacement)
+- Live-update path: **`/altws/live-update/app`** (Unity app opens this after receiving `AppId`; server accepts it for AltDialog connection state)
 - Default `appName`: `__default__`
 - Scheme: `ws` (plain) or `wss` (TLS — requires non-GPL SDK build)
 
@@ -46,6 +46,19 @@ ws[s]://<host>:<port><path>?appName=<name>&platform=<p>&platformVersion=<v>&devi
 ### 1. App (Unity) connects
 
 Unity SDK connects first. Server registers the App keyed by `appName`.
+
+Server sends the App an `AppId` command. `AltDialog` uses this value to open the live-update channel and mark the server connection as established:
+
+```json
+{
+  "commandName": "AppId",
+  "driverId": "<8-hex app id>"
+}
+```
+
+### 1a. App live-update channel connects
+
+Unity SDK connects a second app-side WebSocket to `/altws/live-update/app` with the received `appId`. The server accepts this socket but does not start screenshot streaming unless a future live-update controller sends `Start`.
 
 ### 2. Driver connects
 
@@ -72,15 +85,37 @@ Server sends this JSON to the Driver to signal successful pairing. Both Python a
 
 Detection in client: string-contains check `"driverRegistered" in message` (not strict JSON parse).
 
+The server also sends the App a Unity-side lifecycle notification so `AltDialog` can hide itself:
+
+```json
+{
+  "isNotification": true,
+  "commandName": "DriverConnectedNotification",
+  "driverId": "<driver deviceInstanceId>"
+}
+```
+
 ### 4. Message relay
 
 After pairing, all messages from Driver are forwarded verbatim to App, and vice versa. The server is a transparent relay — it does not inspect or transform message content.
 
-### 5. App disconnects mid-session
+### 5. Driver disconnects
+
+Server removes the pairing and sends the App this Unity-side lifecycle notification so `AltDialog` can show itself again:
+
+```json
+{
+  "isNotification": true,
+  "commandName": "DriverDisconnectedNotification",
+  "driverId": "<driver deviceInstanceId>"
+}
+```
+
+### 6. App disconnects mid-session
 
 Server closes the Driver connection with **4002**. The Python client (`_on_close`) automatically calls `connect()` again on 4002 — it will retry until timeout.
 
-### 6. Max connections (4009)
+### 7. Max connections (4009)
 
 Close code **4009** = `MaxNoOfConnectionsDriversExceededException` — too many drivers connected globally (not per-app).
 

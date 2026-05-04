@@ -31,16 +31,41 @@ describe("Feature: AltTester server connection management", () => {
     });
   });
 
+  describe("Scenario: Unity app receives AppId and opens live-update channel", () => {
+    it("Given a Unity app is connected / When it receives AppId / Then the live-update app socket is accepted", async () => {
+      const appMessages: string[] = [];
+      const app = await connectApp(srv.port, "MyGame", { onMessage: (msg) => appMessages.push(msg) });
+      await waitForCondition(() => appMessages.some(m => m.includes("\"AppId\"")), 1000);
+
+      const appIdMessage = appMessages.map(JSON.parse).find(m => m.commandName === "AppId");
+      expect(appIdMessage).toMatchObject({ commandName: "AppId" });
+      expect(appIdMessage.driverId).toMatch(/^[A-F0-9]{8}$/);
+
+      const liveUpdate = await connectLiveUpdateApp(srv.port, "MyGame", appIdMessage.driverId);
+      expect(liveUpdate.readyState).toBe(WebSocket.OPEN);
+
+      liveUpdate.close();
+      app.close();
+    });
+  });
+
   describe("Scenario: Driver pairs with Unity app and receives driverRegistered", () => {
     it("Given a Unity app is connected / When a driver connects / Then driver receives driverRegistered notification", async () => {
-      const app = await connectApp(srv.port, "MyGame");
+      const appMessages: string[] = [];
+      const app = await connectApp(srv.port, "MyGame", { onMessage: (msg) => appMessages.push(msg) });
       await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
 
       const messages: string[] = [];
-      const driver = await connectDriver(srv.port, "MyGame", { onMessage: (msg) => messages.push(msg) });
+      const driver = await connectDriver(srv.port, "MyGame", { deviceInstanceId: "driver-1", onMessage: (msg) => messages.push(msg) });
 
       await waitForCondition(() => messages.some(m => m.includes("driverRegistered")), 2000);
       expect(messages.some(m => m.includes("driverRegistered"))).toBe(true);
+      await waitForCondition(() => appMessages.some(m => m.includes("DriverConnectedNotification")), 1000);
+      expect(appMessages.map(JSON.parse)).toContainEqual({
+        isNotification: true,
+        commandName: "DriverConnectedNotification",
+        driverId: "driver-1",
+      });
 
       app.close();
       driver.close();
@@ -150,7 +175,7 @@ describe("Feature: AltTester server connection management", () => {
 
   // R1-4: app receives driverDisconnected notification when driver leaves
   describe("Scenario: App notified when driver disconnects", () => {
-    it("Given a paired session / When the driver disconnects / Then the app receives a driverDisconnected notification", async () => {
+    it("Given a paired session / When the driver disconnects / Then the app receives a DriverDisconnectedNotification", async () => {
       const appMessages: string[] = [];
       const app = await connectApp(srv.port, "MyGame", { onMessage: (m) => appMessages.push(m) });
       await waitForCondition(() => srv.registry.hasApp("MyGame"), 1000);
@@ -159,8 +184,12 @@ describe("Feature: AltTester server connection management", () => {
       await waitForCondition(() => srv.registry.isPaired("MyGame"), 1000);
 
       driver.close();
-      await waitForCondition(() => appMessages.some(m => m.includes("driverDisconnected")), 1000);
-      expect(appMessages.some(m => m.includes("driverDisconnected"))).toBe(true);
+      await waitForCondition(() => appMessages.some(m => m.includes("DriverDisconnectedNotification")), 1000);
+      expect(appMessages.map(JSON.parse)).toContainEqual({
+        isNotification: true,
+        commandName: "DriverDisconnectedNotification",
+        driverId: "d1",
+      });
 
       app.close();
     });
@@ -215,6 +244,17 @@ function connectDriver(port: number, appName: string, opts: ConnectOpts = {}): P
     platformVersion: "unknown",
     deviceInstanceId: opts.deviceInstanceId ?? "d1",
     driverType: "python_3.5.0",
+  }, opts.onMessage);
+}
+
+function connectLiveUpdateApp(port: number, appName: string, appId: string, opts: ConnectOpts = {}): Promise<WebSocket> {
+  return connectWs(port, "/altws/live-update/app", {
+    appName,
+    platform: "Editor",
+    platformVersion: "6000",
+    deviceInstanceId: opts.deviceInstanceId ?? "app-1",
+    appId,
+    driverType: "SDK",
   }, opts.onMessage);
 }
 

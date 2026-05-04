@@ -30,17 +30,41 @@ const DRIVER_REGISTERED = JSON.stringify({
   data: "",
 });
 
-const DRIVER_DISCONNECTED = JSON.stringify({
-  isNotification: true,
-  commandName: "driverDisconnected",
-  data: "",
-});
-
 const CLOSE_REASONS: Record<number, string> = {
   [CloseCode.NoAppConnected]: "No app connected with that appName.",
   [CloseCode.MultipleDrivers]: "A driver is already connected to that app.",
   [CloseCode.MultipleDriversTrying]: "Another driver is already trying to connect.",
 };
+
+function driverLifecycleNotification(commandName: string, driverId: string): string {
+  return JSON.stringify({
+    isNotification: true,
+    commandName,
+    driverId,
+  });
+}
+
+function getDriverId(ws: WsHandle): string {
+  return ws.data.params.get("deviceInstanceId") ?? "unknown";
+}
+
+function appIdCommand(appId: string): string {
+  return JSON.stringify({
+    commandName: "AppId",
+    driverId: appId,
+  });
+}
+
+function resolveAppId(appName: string, deviceInstanceId: string, suppliedAppId: string | null): string {
+  if (suppliedAppId && suppliedAppId !== "unknown") return suppliedAppId;
+
+  let hash = 0x811c9dc5;
+  for (const char of `${appName}:${deviceInstanceId}`) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0").toUpperCase();
+}
 
 async function resolveAdapter(): Promise<ServerAdapter> {
   // "Bun" in globalThis matches any truthy value; the typeof check excludes
@@ -77,8 +101,10 @@ export async function createAltTesterServer(
     // Paths from SDK source:
     //   /altws/app  → Unity SDK app (RuntimeWebSocketClient)
     //   /altws      → test driver (Python AltDriver, C# DriverWebSocketClient)
+    //   /altws/live-update/app → Unity SDK live-update app channel
     if (path === "/altws/app") return { params, appName, role: "app" };
     if (path === "/altws") return { params, appName, role: "driver" };
+    if (path === "/altws/live-update/app") return { params, appName, role: "live-update-app" };
     return null;
   });
 
@@ -100,11 +126,16 @@ export async function createAltTesterServer(
       const platformVersion = params.get("platformVersion") ?? "unknown";
       const deviceInstanceId = params.get("deviceInstanceId") ?? "unknown";
       const driverType = params.get("driverType") ?? "unknown";
-      const appId = params.get("appId") ?? undefined;
+      const appId = resolveAppId(appName, deviceInstanceId, params.get("appId"));
 
       if (role === "app") {
         registry.registerApp(appName, ws, { platform, platformVersion, deviceInstanceId, appId });
+        ws.send(appIdCommand(appId));
         feed.emit({ type: "appConnected", appName, platform, platformVersion, deviceInstanceId });
+        return;
+      }
+
+      if (role === "live-update-app") {
         return;
       }
 
@@ -112,6 +143,9 @@ export async function createAltTesterServer(
 
       if (result === "paired") {
         ws.send(DRIVER_REGISTERED);
+        registry.getPairedApp(ws)?.send(
+          driverLifecycleNotification("DriverConnectedNotification", deviceInstanceId),
+        );
         feed.emit({ type: "driverConnected", appName, driverType, paired: true });
         return;
       }
@@ -145,10 +179,11 @@ export async function createAltTesterServer(
 
       if (role === ClientRole.Driver) {
         const appName = ws.data.appName;
+        const driverId = getDriverId(ws);
         const appWs = registry.removeDriver(ws);
         feed.emit({ type: "driverDisconnected", appName });
         if (appWs) {
-          appWs.send(DRIVER_DISCONNECTED);
+          appWs.send(driverLifecycleNotification("DriverDisconnectedNotification", driverId));
         }
       }
     },
