@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Open UITester Server">
+  <rect width="64" height="64" rx="8" fill="#111310"/>
+  <path d="M13 19h38v26H13z" fill="none" stroke="#00a676" stroke-width="4"/>
+  <path d="M22 28h20M22 36h12" stroke="#f5b700" stroke-width="4" stroke-linecap="square"/>
+  <path d="M46 45l8 8" stroke="#e94f37" stroke-width="5" stroke-linecap="square"/>
+</svg>

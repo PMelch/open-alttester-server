@@ -1,0 +1,79 @@
+{
+  "name": "open-uitester-server",
+  "version": "0.7.0",
+  "description": "Free, open-source drop-in alternative to commercial AltTester® Desktop. WebSocket relay for the AltTester® Unity SDK, with a real-time web dashboard for Node.js and Bun.",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "homepage": "https://pmelch.github.io/open-uitester-server/",
+  "keywords": [
+    "open-uitester-server",
+    "unity",
+    "unity-ui-testing",
+    "testing",
+    "websocket",
+    "bun",
+    "node",
+    "cli",
+    "game-testing"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PMelch/open-uitester-server.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PMelch/open-uitester-server/issues"
+  },
+  "engines": {
+    "bun": ">=1.0.0",
+    "node": ">=20.0.0"
+  },
+  "bin": {
+    "open-uitester-server": "./bin/open-uitester-server.js"
+  },
+  "readme": "README.npm.md",
+  "files": [
+    "README.npm.md",
+    "CHANGELOG.md",
+    "docs/agents.md",
+    "docs/assets/dashboard-debug.png",
+    "docs/assets/dashboard-live.png",
+    "docs/assets/dashboard-mcp.png",
+    "src/index.ts",
+    "src/cli.ts",
+    "src/server/adapter.ts",
+    "src/server/adapters/",
+    "src/server/debug.ts",
+    "src/server/inspector.ts",
+    "src/server/mcp.ts",
+    "src/server/registry.ts",
+    "src/server/server.ts",
+    "src/web/dashboard.html",
+    "src/web/handler.ts",
+    "src/web/inspector-handler.ts",
+    "bin/"
+  ],
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "start:bun": "bun src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:bun": "bun test",
+    "test:bun:watch": "bun test --watch",
+    "test:bun:coverage": "bun test --coverage",
+    "typecheck": "tsc --project tsconfig.node.json --noEmit",
+    "typecheck:bun": "tsc --project tsconfig.bun.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "tsx": "^4.0.0",
+    "ws": "^8.20.0"
+  }
+}

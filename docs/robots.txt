@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /mcp-ui-proposals/
+Disallow: /agent-config-ui-proposals/
+
+Sitemap: https://pmelch.github.io/open-uitester-server/sitemap.xml

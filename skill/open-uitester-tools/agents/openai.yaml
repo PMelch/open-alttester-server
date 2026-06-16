@@ -1,0 +1,7 @@
+interface:
+  display_name: "Open UITester Tools"
+  short_description: "Inspect Unity apps without MCP"
+  default_prompt: "Use $open-uitester-tools to inspect a connected Unity app through the independent skill tools."
+
+policy:
+  allow_implicit_invocation: true

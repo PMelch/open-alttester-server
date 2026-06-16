@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UiTester Server</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            surface: '#181b20',
+            base: '#101114',
+            field: '#0f1115',
+            line: '#2a3038',
+          }
+        }
+      }
+    }
+  </script>
+  <script type="importmap">
+    { "imports": { "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js" } }
+  </script>
+</head>
+<body class="min-h-screen bg-[#101114] text-slate-100 antialiased dark">
+
+<div id="app" class="flex min-h-screen flex-col">
+  <header class="flex flex-col gap-3 border-b border-[#2a3038] bg-[#11151b] px-4 py-4 sm:flex-row sm:items-center sm:justify-between lg:px-6">
+    <div class="flex flex-wrap items-center gap-3">
+      <h1 class="text-xl font-semibold tracking-normal text-slate-50">Open UITester Server</h1>
+      <span v-if="state.version" class="rounded border border-[#303640] bg-[#151920] px-2 py-1 font-mono text-xs text-slate-300">v{{ state.version }}</span>
+      <span class="rounded border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 font-mono text-xs text-emerald-300">Live</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 text-sm">
+      <span class="rounded border border-[#303640] bg-[#151920] px-3 py-2">
+        <span class="text-slate-500">Uptime</span>
+        <span class="ml-2 font-mono text-slate-100">{{ uptimeFormatted }}</span>
+      </span>
+      <span class="rounded border border-[#303640] bg-[#151920] px-3 py-2 font-mono text-cyan-300">{{ websocketEndpoint }}</span>
+    </div>
+  </header>
+
+  <nav aria-label="Dashboard sections" class="flex gap-1 overflow-x-auto border-b border-[#2a3038] bg-[#11151b] px-4 lg:px-6">
+    <button type="button"
+            @click="activeTab = 'overview'"
+            class="min-h-12 border-b-2 px-4 text-sm font-semibold transition"
+            :class="activeTab === 'overview' ? 'border-cyan-400 text-cyan-300' : 'border-transparent text-slate-400 hover:text-slate-100'">
+      Live Dashboard
+    </button>
+    <button type="button"
+            @click="activeTab = 'inspector'"
+            class="min-h-12 border-b-2 px-4 text-sm font-semibold transition"
+            :class="activeTab === 'inspector' ? 'border-cyan-400 text-cyan-300' : 'border-transparent text-slate-400 hover:text-slate-100'">
+      Inspector
+    </button>
+    <button type="button"
+            @click="activeTab = 'mcp'"
+            class="min-h-12 border-b-2 px-4 text-sm font-semibold transition"
+            :class="activeTab === 'mcp' ? 'border-cyan-400 text-cyan-300' : 'border-transparent text-slate-400 hover:text-slate-100'">
+      MCP
+    </button>
+    <button type="button"
+            @click="activeTab = 'debug'"
+            class="min-h-12 border-b-2 px-4 text-sm font-semibold transition"
+            :class="activeTab === 'debug' ? 'border-cyan-400 text-cyan-300' : 'border-transparent text-slate-400 hover:text-slate-100'">
+      Debug
+    </button>
+  </nav>
+
+  <div class="flex flex-1">
+    <main class="min-h-0 flex-1 p-4">
+      <section v-show="activeTab === 'overview'" aria-label="Live dashboard workspace" class="grid min-h-0 min-w-0 self-start gap-4">
+        <section id="server-status" aria-label="Server status" class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Apps</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-cyan-300">{{ state.apps.length }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ pairedCount }} paired, {{ waitingAppCount }} waiting</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Test Drivers</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-cyan-300">{{ state.drivers.length }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ connectingDriverCount }} connecting</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">MCP Sessions</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-teal-300">{{ state.mcp?.activeSessions ?? 0 }}</p>
+            <p class="mt-1 text-xs text-slate-500">{{ enabledMcpAppCount }} enabled apps</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Attention</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums" :class="attentionCount ? 'text-amber-300' : 'text-emerald-300'">{{ attentionCount }}</p>
+            <p class="mt-1 text-xs text-slate-500">waiting apps or unpaired drivers</p>
+          </div>
+        </section>
+
+        <section id="connection-inventory" aria-label="Connection inventory" class="grid min-h-0 gap-4">
+          <div class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+            <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Connected Apps</h2>
+              <span class="font-mono text-xs text-slate-600">{{ state.apps.length }}</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[34rem] text-sm">
+                <thead class="bg-[#11151b] text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-4 py-3 font-medium">App Name</th>
+                    <th class="px-4 py-3 font-medium">Platform</th>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[#2a3038]">
+                  <tr v-if="state.apps.length === 0">
+                    <td colspan="3" class="px-4 py-5 text-slate-500">No apps connected</td>
+                  </tr>
+                  <tr v-for="app in state.apps" :key="app.appName" class="text-slate-300">
+                    <td class="px-4 py-3 font-mono text-slate-100">{{ app.appName }}</td>
+                    <td class="px-4 py-3 text-slate-400">{{ app.platform }}</td>
+                    <td class="px-4 py-3">
+                      <span v-if="isPaired(app.appName)" class="inline-flex items-center rounded border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-300">Paired</span>
+                      <span v-else class="inline-flex items-center rounded border border-slate-500/25 bg-slate-500/10 px-2 py-1 text-xs font-semibold text-slate-300">Waiting</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+            <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Connected Test Drivers</h2>
+              <span class="font-mono text-xs text-slate-600">{{ state.drivers.length }}</span>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[34rem] text-sm">
+                <thead class="bg-[#11151b] text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-4 py-3 font-medium">Target App</th>
+                    <th class="px-4 py-3 font-medium">Driver Type</th>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[#2a3038]">
+                  <tr v-if="state.drivers.length === 0">
+                    <td colspan="3" class="px-4 py-5 text-slate-500">No drivers connected</td>
+                  </tr>
+                  <tr v-for="d in state.drivers" :key="`${d.appName}::${d.deviceInstanceId}`" class="text-slate-300">
+                    <td class="px-4 py-3 font-mono text-slate-100">{{ d.appName }}</td>
+                    <td class="px-4 py-3 text-slate-400">{{ d.driverType }}</td>
+                    <td class="px-4 py-3">
+                      <span v-if="d.paired" class="inline-flex items-center rounded border border-emerald-400/25 bg-emerald-400/10 px-2 py-1 text-xs font-semibold text-emerald-300">Paired</span>
+                      <span v-else class="inline-flex items-center rounded border border-amber-400/25 bg-amber-400/10 px-2 py-1 text-xs font-semibold text-amber-300">Connecting</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="recent-events" aria-label="Recent events" class="bg-[#101114]">
+          <div class="mb-2 flex items-center justify-between">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Recent Events</h2>
+            <span class="font-mono text-xs text-slate-600">{{ log.length }} / 100</span>
+          </div>
+          <div class="max-h-44 overflow-y-auto rounded-lg border border-[#2a3038] bg-[#0f1115] px-4 py-3 font-mono text-xs">
+            <div v-if="log.length === 0" class="py-2 text-slate-500">No events yet</div>
+            <div v-for="(entry, i) in log" :key="i" class="grid gap-2 border-t border-[#2a3038]/60 py-2 first:border-t-0 sm:grid-cols-[6rem_1fr]">
+              <span class="text-slate-600">{{ entry.time }}</span>
+              <span :class="entry.cls" class="break-words">{{ entry.msg }}</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section v-show="activeTab === 'inspector'" id="inspector" aria-label="Inspector workspace" class="flex min-h-[32rem] flex-col overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+        <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+          <div class="flex min-w-0 items-center gap-2">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Inspector</h2>
+          </div>
+          <span class="font-mono text-xs text-slate-600">{{ insp.selectedApp || 'No app selected' }}</span>
+        </div>
+
+        <div class="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
+            <div aria-label="Inspector controls" role="group" class="grid gap-3">
+              <select v-model="insp.selectedApp"
+                      class="min-h-10 w-full rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-300/30">
+                <option value="">Select an app...</option>
+                <option v-for="app in state.apps" :key="app.appName" :value="app.appName">{{ app.appName }}</option>
+              </select>
+              <div class="flex flex-wrap gap-2">
+                <button @click="inspectRefresh"
+                        :disabled="!insp.selectedApp || insp.loading"
+                        class="min-h-10 rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-teal-600">
+                  {{ insp.loading ? 'Loading...' : insp.scenes.length ? 'Refresh' : 'Inspect' }}
+                </button>
+
+                <!-- Auto-update -->
+                <label class="flex min-h-10 items-center gap-2 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 text-sm text-slate-300 select-none">
+                  <input type="checkbox" v-model="autoUpdate" :disabled="!insp.scenes.length" class="h-4 w-4 accent-teal-500 disabled:cursor-not-allowed">
+                  Auto
+                </label>
+                <template v-if="autoUpdate">
+                  <input type="number" v-model.number="autoIntervalMs" min="500" step="500"
+                         class="min-h-10 w-24 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-teal-300 focus:ring-2 focus:ring-teal-300/30">
+                  <span class="self-center text-xs text-slate-500">ms</span>
+                </template>
+
+                <!-- Depth -->
+                <div class="flex min-h-10 items-center gap-2 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2">
+                  <label class="text-xs font-semibold uppercase tracking-wide text-slate-500">Depth</label>
+                  <input type="number" v-model.number="maxDepth" min="0" step="1"
+                         class="w-16 border-0 bg-transparent p-0 font-mono text-sm text-slate-200 outline-none focus:ring-0"
+                         title="Max hierarchy depth (0 = unlimited)">
+                  <span class="text-xs text-slate-600">0=inf</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="insp.error" class="rounded-lg border border-rose-400/20 bg-rose-400/10 px-3 py-2 text-sm text-rose-300">{{ insp.error }}</div>
+
+            <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-4">
+              <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Scene Summary</h3>
+              <div v-if="insp.currentScene" class="mt-3 text-sm">
+                <span class="text-slate-500">Current scene</span>
+                <div class="mt-1 break-words font-mono text-teal-300">{{ currentSceneName }}</div>
+              </div>
+              <div v-if="insp.scenes.length" class="mt-4 text-sm">
+                <span class="text-slate-500">Loaded scenes</span>
+                <div class="mt-1 break-words font-mono text-slate-200">{{ insp.scenes.join(', ') }}</div>
+              </div>
+              <div v-if="!insp.currentScene && !insp.scenes.length" class="mt-3 text-sm text-slate-500">Select a connected app to inspect.</div>
+            </div>
+
+            <!-- Object tree -->
+            <div class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-[#2a3038] bg-[#0f1115]">
+              <div class="border-b border-[#2a3038] px-4 py-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Object Tree</h3>
+              </div>
+              <div class="grid grid-cols-[minmax(0,1fr)_2.5rem] gap-2 border-b border-[#2a3038] bg-[#11151b] p-3">
+                <input v-model="objectFilter"
+                       aria-label="Filter object tree"
+                       type="search"
+                       placeholder="Filter nodes..."
+                       class="min-h-10 min-w-0 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 font-mono text-sm text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-teal-300 focus:ring-2 focus:ring-teal-300/30">
+                <button type="button"
+                        aria-label="Clear object filter"
+                        @click="objectFilter = ''"
+                        :disabled="!objectFilter"
+                        class="min-h-10 rounded-lg border border-[#303640] bg-[#151920] px-3 text-sm font-semibold text-slate-400 transition hover:text-slate-100 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-slate-400">
+                  x
+                </button>
+              </div>
+              <div v-if="filteredFlatObjects.length" class="min-h-0 flex-1 overflow-auto p-4 font-mono text-xs">
+                <div v-for="obj in filteredFlatObjects" :key="obj.id"
+                     :style="{ paddingLeft: (obj.depth * 14) + 'px' }"
+                     class="flex min-w-max items-center gap-1 border-t border-[#2a3038]/60 py-1 text-slate-300 first:border-t-0">
+                  <span class="text-slate-600 select-none">{{ obj.depth > 0 ? '└' : '▸' }}</span>
+                  <span>{{ obj.name }}</span>
+                </div>
+              </div>
+              <div v-else-if="flatObjects.length && objectFilter" class="p-4 text-sm text-slate-500">No objects match filter.</div>
+              <div v-else-if="insp.objectsLoaded" class="p-4 text-sm text-slate-500">No objects found.</div>
+              <div v-else class="p-4 text-sm text-slate-500">Object hierarchy appears after inspection.</div>
+            </div>
+        </div>
+      </section>
+
+      <section v-show="activeTab === 'mcp'" aria-label="MCP tab workspace" class="grid gap-4">
+        <section aria-label="MCP status" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">MCP Mode</p>
+            <p class="mt-2 text-3xl font-bold text-teal-300">{{ mcpModeLabel }}</p>
+            <p class="mt-1 text-xs text-slate-500">agent access policy</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Enabled Apps</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-cyan-300">{{ enabledMcpAppCount }}</p>
+            <p class="mt-1 text-xs text-slate-500">of {{ state.apps.length }} connected</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Active Sessions</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-emerald-300">{{ state.mcp?.activeSessions ?? 0 }}</p>
+            <p class="mt-1 text-xs text-slate-500">MCP clients initialized</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Configured Agents</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-cyan-300">{{ enabledAgentConfigCount }}</p>
+            <p class="mt-1 text-xs text-slate-500">of {{ agentConfigAgents.length }} enabled</p>
+          </div>
+        </section>
+
+        <div class="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(28rem,1.1fr)]">
+          <section aria-label="MCP server controls" class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+            <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">MCP Server</h2>
+              <span class="inline-flex items-center rounded border border-teal-400/25 bg-teal-400/10 px-2 py-1 text-xs font-semibold text-teal-300">{{ mcpModeLabel }}</span>
+            </div>
+            <div class="grid gap-4 p-4">
+              <div role="group" aria-label="MCP mode" class="grid gap-2 sm:grid-cols-3">
+                <button type="button"
+                        @click="setMcpMode('off')"
+                        class="min-h-12 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition"
+                        :class="state.mcp?.mode === 'off' ? 'border-teal-400/60 bg-teal-400/10 text-teal-200' : 'border-[#303640] bg-[#0f1115] text-slate-300 hover:text-slate-100'">
+                  Off
+                  <span class="mt-1 block text-xs font-normal text-slate-500">Default</span>
+                </button>
+                <button type="button"
+                        @click="setMcpMode('selected')"
+                        class="min-h-12 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition"
+                        :class="state.mcp?.mode === 'selected' ? 'border-teal-400/60 bg-teal-400/10 text-teal-200' : 'border-[#303640] bg-[#0f1115] text-slate-300 hover:text-slate-100'">
+                  Selected
+                  <span class="mt-1 block text-xs font-normal text-slate-500">Per app</span>
+                </button>
+                <button type="button"
+                        @click="setMcpMode('all')"
+                        class="min-h-12 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition"
+                        :class="state.mcp?.mode === 'all' ? 'border-teal-400/60 bg-teal-400/10 text-teal-200' : 'border-[#303640] bg-[#0f1115] text-slate-300 hover:text-slate-100'">
+                  All Apps
+                  <span class="mt-1 block text-xs font-normal text-slate-500">Concurrent</span>
+                </button>
+              </div>
+
+              <div class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#0f1115]">
+                <div class="flex items-center justify-between border-b border-[#2a3038] px-3 py-2">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Enabled Apps</h3>
+                  <span class="font-mono text-xs text-slate-600">{{ enabledMcpAppCount }} / {{ state.apps.length }}</span>
+                </div>
+                <div v-if="state.apps.length === 0" class="px-3 py-3 text-sm text-slate-500">No apps connected</div>
+                <div v-for="app in state.apps" :key="`mcp-tab::${app.appName}`" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-[#2a3038]/70 px-3 py-2 first:border-t-0">
+                  <div class="min-w-0">
+                    <div class="truncate font-mono text-sm text-slate-100">{{ app.appName }}</div>
+                    <div class="truncate text-xs text-slate-500">{{ app.platform }} · {{ isPaired(app.appName) ? 'paired' : 'waiting' }}</div>
+                  </div>
+                  <button type="button"
+                          :disabled="state.mcp?.mode !== 'selected'"
+                          @click="toggleMcpApp(app.appName)"
+                          :aria-label="`Toggle MCP for ${app.appName}`"
+                          class="relative h-6 w-11 rounded-full border transition disabled:cursor-not-allowed disabled:opacity-45"
+                          :class="isMcpAppEnabled(app.appName) ? 'border-teal-300/60 bg-teal-500/80' : 'border-slate-600 bg-slate-700'">
+                    <span class="absolute top-[3px] h-4 w-4 rounded-full bg-white transition" :class="isMcpAppEnabled(app.appName) ? 'left-[22px]' : 'left-[3px]'"></span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">MCP Endpoint</h3>
+                <div class="mt-2 break-words font-mono text-sm text-cyan-300">{{ mcpEndpoint }}</div>
+                <div class="mt-2 border-t border-[#2a3038] pt-2 text-xs text-slate-500">App-specific tool calls require <span class="font-mono text-slate-300">appName</span>.</div>
+              </div>
+
+              <div class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#0f1115]">
+                <div class="flex items-center justify-between border-b border-[#2a3038] px-3 py-2">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Tool Catalog</h3>
+                  <span class="font-mono text-xs text-slate-600">{{ mcpTools.length }} core tools</span>
+                </div>
+                <div class="grid gap-2 p-3 sm:grid-cols-2">
+                  <div v-for="tool in mcpTools" :key="tool.name" class="rounded-lg border border-[#303640] bg-[#151920] px-3 py-2">
+                    <div class="font-mono text-xs text-slate-200">{{ tool.name }}</div>
+                    <div class="mt-1 text-xs text-slate-500">{{ tool.detail }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+            <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+              <div>
+                <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Agent Configuration</h2>
+                <p class="mt-1 truncate font-mono text-xs text-slate-600">{{ agentConfigTarget }}</p>
+              </div>
+              <button type="button"
+                      aria-label="Configure agents"
+                      title="Configure agents"
+                      @click="agentConfigOpen = true"
+                      class="min-h-9 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-200">
+                Configure
+              </button>
+            </div>
+            <div class="grid gap-4 p-4">
+              <div class="grid gap-4 lg:grid-cols-2">
+                <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Enabled Agents</h3>
+                  <div class="mt-3 grid gap-2">
+                    <div v-for="agent in agentConfigAgents" :key="`mcp-agent::${agent.id}`" class="flex items-start justify-between gap-3 border-t border-[#2a3038]/70 pt-2 first:border-t-0 first:pt-0">
+                      <div class="min-w-0">
+                        <div class="text-sm font-semibold text-slate-200">{{ agent.name }}</div>
+                        <div class="mt-1 text-xs text-slate-500">{{ agent.detail }}</div>
+                      </div>
+                      <span class="inline-flex items-center rounded border px-2 py-1 text-xs font-semibold" :class="agent.enabled ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300' : 'border-slate-500/25 bg-slate-500/10 text-slate-400'">{{ agent.enabled ? 'On' : 'Off' }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Manual MCP Configs</h3>
+                  <pre aria-label="Manual MCP Config code block" class="mt-3 max-h-72 overflow-auto rounded-lg border border-[#2a3038] bg-[#080a0d] p-4 font-mono text-xs leading-5 text-cyan-200"><code>{{ manualMcpConfig }}</code></pre>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section v-show="activeTab === 'debug'" aria-label="Debug command stream" class="grid gap-4">
+        <section aria-label="Debug status" class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Command Events</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-cyan-300">{{ debugCommands.length }}</p>
+            <p class="mt-1 text-xs text-slate-500">latest captured commands</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Command Sources</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums text-cyan-300">{{ debugSources.length }}</p>
+            <p class="mt-1 text-xs text-slate-500">drivers and agent paths</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Errors</p>
+            <p class="mt-2 font-mono text-3xl font-bold tabular-nums" :class="debugErrorCount ? 'text-rose-300' : 'text-emerald-300'">{{ debugErrorCount }}</p>
+            <p class="mt-1 text-xs text-slate-500">timeouts or rejected calls</p>
+          </div>
+          <div class="rounded-lg border border-[#2a3038] bg-[#181c23] p-4">
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Capture Window</p>
+            <p class="mt-2 text-3xl font-bold text-teal-300">Live</p>
+            <p class="mt-1 text-xs text-slate-500">newest first</p>
+          </div>
+        </section>
+
+        <section class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+          <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+            <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Received Commands</h2>
+            <span class="font-mono text-xs text-slate-600">newest first</span>
+          </div>
+          <div class="grid gap-4 p-4">
+            <div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto_auto_auto_auto]">
+              <input v-model="debugFilter"
+                     type="search"
+                     aria-label="Filter command debug stream"
+                     placeholder="Filter app, command, source, payload..."
+                     class="min-h-10 min-w-0 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 font-mono text-sm text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/30">
+              <button type="button" @click="debugSourceFilter = 'all'" class="min-h-10 rounded-lg border px-3 py-2 text-sm font-semibold transition" :class="debugSourceFilter === 'all' ? 'border-teal-400/60 bg-teal-400/10 text-teal-200' : 'border-[#303640] bg-[#0f1115] text-slate-300'">All</button>
+              <button type="button" @click="debugSourceFilter = 'driver'" class="min-h-10 rounded-lg border px-3 py-2 text-sm font-semibold transition" :class="debugSourceFilter === 'driver' ? 'border-cyan-400/60 bg-cyan-400/10 text-cyan-200' : 'border-[#303640] bg-[#0f1115] text-slate-300'">Drivers</button>
+              <button type="button" @click="debugSourceFilter = 'mcp'" class="min-h-10 rounded-lg border px-3 py-2 text-sm font-semibold transition" :class="debugSourceFilter === 'mcp' ? 'border-teal-400/60 bg-teal-400/10 text-teal-200' : 'border-[#303640] bg-[#0f1115] text-slate-300'">MCP</button>
+              <button type="button" @click="debugSourceFilter = 'skill'" class="min-h-10 rounded-lg border px-3 py-2 text-sm font-semibold transition" :class="debugSourceFilter === 'skill' ? 'border-emerald-400/60 bg-emerald-400/10 text-emerald-200' : 'border-[#303640] bg-[#0f1115] text-slate-300'">Skill</button>
+            </div>
+
+            <div aria-label="Scrollable debug command events" class="max-h-52 overflow-auto rounded-lg border border-[#2a3038]">
+              <table class="w-full min-w-[72rem] text-sm">
+                <thead class="sticky top-0 z-10 bg-[#11151b] text-left text-xs uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th class="px-4 py-3 font-medium">Time</th>
+                    <th class="px-4 py-3 font-medium">Source</th>
+                    <th class="px-4 py-3 font-medium">App</th>
+                    <th class="px-4 py-3 font-medium">Command / Tool</th>
+                    <th class="px-4 py-3 font-medium">Message ID</th>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                    <th class="px-4 py-3 font-medium">Duration</th>
+                    <th class="px-4 py-3 font-medium">Payload Preview</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[#2a3038]">
+                  <tr v-if="filteredDebugCommands.length === 0">
+                    <td colspan="8" class="px-4 py-5 text-slate-500">No command events captured</td>
+                  </tr>
+                  <tr v-for="command in filteredDebugCommands" :key="command.id" @click="selectDebugCommand(command.id)" class="cursor-pointer text-slate-300 transition hover:bg-[#202630]" :class="selectedDebugCommand?.id === command.id ? 'bg-[#1b242c]' : ''">
+                    <td class="px-4 py-3 font-mono text-xs text-slate-200">{{ formatDebugTime(command.time) }}</td>
+                    <td class="px-4 py-3">
+                      <span class="inline-flex items-center rounded border px-2 py-1 text-xs font-semibold" :class="debugSourceClass(command.source?.type)">{{ command.source?.label || command.source?.type || 'unknown' }}</span>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-slate-100">{{ command.appName }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-100">{{ command.toolName && command.toolName !== command.commandName ? `${command.toolName} -> ${command.commandName}` : command.commandName }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-300">{{ command.messageId || command.id }}</td>
+                    <td class="px-4 py-3"><span class="inline-flex items-center rounded border px-2 py-1 text-xs font-semibold" :class="debugStatusClass(command.status)">{{ command.status }}</span></td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-300">{{ command.durationMs == null ? 'pending' : `${command.durationMs} ms` }}</td>
+                    <td class="max-w-sm truncate px-4 py-3 font-mono text-xs text-slate-400">{{ payloadPreview(command.requestPayload) }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid gap-4 xl:grid-cols-[minmax(20rem,0.45fr)_minmax(0,1fr)]">
+          <section class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+            <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Command Sources</h2>
+              <span class="font-mono text-xs text-slate-600">{{ debugSources.length }}</span>
+            </div>
+            <div v-if="debugSources.length === 0" class="p-4 text-sm text-slate-500">No command sources yet</div>
+            <div v-for="source in debugSources" :key="`${source.type}::${source.label}::${source.detail}`" class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-t border-[#2a3038]/70 px-4 py-3 first:border-t-0">
+              <div class="min-w-0">
+                <div class="truncate font-mono text-sm font-semibold text-slate-100">{{ source.label }}</div>
+                <div class="mt-1 truncate text-xs text-slate-500">{{ source.detail || source.type }}</div>
+              </div>
+              <span class="inline-flex items-center rounded border px-2 py-1 text-xs font-semibold" :class="debugSourceClass(source.type)">{{ source.type }}</span>
+            </div>
+          </section>
+
+          <section class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#181c23]">
+            <div class="flex items-center justify-between border-b border-[#2a3038] bg-[#141820] px-4 py-3">
+              <h2 class="text-xs font-semibold uppercase tracking-wide text-slate-400">Selected Event</h2>
+              <span v-if="selectedDebugCommand" class="inline-flex items-center rounded border px-2 py-1 text-xs font-semibold" :class="debugStatusClass(selectedDebugCommand.status)">{{ selectedDebugCommand.status }}</span>
+            </div>
+            <div v-if="!selectedDebugCommand" class="p-4 text-sm text-slate-500">Select a command event to inspect request and response payloads.</div>
+            <div v-else class="grid gap-4 p-4">
+              <div class="grid gap-3 md:grid-cols-2">
+                <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Route</h3>
+                  <div class="mt-2 break-words font-mono text-sm text-cyan-300">{{ selectedDebugCommand.toolName ? 'MCP tools/call' : 'UiTester WebSocket' }}</div>
+                </div>
+                <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Resolved Command</h3>
+                  <div class="mt-2 break-words font-mono text-sm text-cyan-300">{{ selectedDebugCommand.commandName }}</div>
+                </div>
+                <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Response Status</h3>
+                  <div class="mt-2 break-words font-mono text-sm text-cyan-300">{{ selectedDebugCommand.status }}</div>
+                </div>
+                <div class="rounded-lg border border-[#2a3038] bg-[#0f1115] p-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Response Time</h3>
+                  <div class="mt-2 break-words font-mono text-sm text-cyan-300">{{ selectedDebugCommand.durationMs == null ? 'pending' : `${selectedDebugCommand.durationMs} ms` }}</div>
+                </div>
+              </div>
+
+              <section class="grid gap-2">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Request Payload</h3>
+                  <span class="font-mono text-xs text-slate-600">{{ selectedDebugCommand.messageId || selectedDebugCommand.id }}</span>
+                </div>
+                <pre class="max-h-80 overflow-auto rounded-lg border border-[#2a3038] bg-[#080a0d] p-4 font-mono text-xs leading-5 text-cyan-200"><code>{{ formatPayload(selectedDebugCommand.requestPayload) }}</code></pre>
+              </section>
+
+              <section class="grid gap-2">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Response Payload</h3>
+                  <span class="font-mono text-xs text-slate-600">{{ selectedDebugCommand.responsePayload ? formatDebugTime(selectedDebugCommand.updatedAt) : 'not received' }}</span>
+                </div>
+                <pre class="max-h-80 overflow-auto rounded-lg border border-[#2a3038] bg-[#080a0d] p-4 font-mono text-xs leading-5 text-cyan-200"><code>{{ selectedDebugCommand.responsePayload ? formatPayload(selectedDebugCommand.responsePayload) : 'No response captured yet.' }}</code></pre>
+              </section>
+            </div>
+          </section>
+        </section>
+      </section>
+
+      <div v-if="agentConfigOpen" class="fixed inset-0 z-50">
+        <button type="button"
+                aria-label="Close agent configuration backdrop"
+                class="absolute inset-0 h-full w-full bg-black/60"
+                @click="agentConfigOpen = false"></button>
+
+        <aside aria-label="Agent configuration panel"
+               class="absolute right-0 top-0 flex h-full w-full max-w-2xl flex-col border-l border-[#2a3038] bg-[#11151b] shadow-2xl shadow-black/50">
+          <div class="flex items-center justify-between border-b border-[#2a3038] px-5 py-4">
+            <div class="min-w-0">
+              <h2 class="text-sm font-semibold uppercase tracking-wide text-slate-200">Agent Configuration</h2>
+              <p class="mt-1 truncate font-mono text-xs text-slate-500">{{ agentConfigTarget }}</p>
+            </div>
+            <button type="button"
+                    aria-label="Close agent configuration"
+                    @click="agentConfigOpen = false"
+                    class="grid h-9 w-9 place-items-center rounded-lg border border-[#303640] bg-[#0f1115] text-sm font-semibold text-slate-400 transition hover:text-slate-100">
+              x
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto p-5">
+            <div class="grid gap-5">
+              <section aria-label="Agent configuration scope" class="grid gap-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Scope</h3>
+                <div role="group" aria-label="Agent configuration scope mode" class="grid grid-cols-2 gap-2">
+                  <button type="button"
+                          @click="agentConfigScope = 'global'"
+                          class="min-h-11 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition"
+                          :class="agentConfigScope === 'global' ? 'border-cyan-400/60 bg-cyan-400/10 text-cyan-200' : 'border-[#303640] bg-[#0f1115] text-slate-300 hover:text-slate-100'">
+                    Global Defaults
+                  </button>
+                  <button type="button"
+                          @click="agentConfigScope = 'project'"
+                          class="min-h-11 rounded-lg border px-3 py-2 text-left text-sm font-semibold transition"
+                          :class="agentConfigScope === 'project' ? 'border-cyan-400/60 bg-cyan-400/10 text-cyan-200' : 'border-[#303640] bg-[#0f1115] text-slate-300 hover:text-slate-100'">
+                    Project Folder
+                  </button>
+                </div>
+                <label class="grid gap-2">
+                  <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">Project Folder</span>
+                  <span class="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                    <input v-model="agentProjectFolder"
+                           :disabled="agentConfigScope !== 'project'"
+                           :placeholder="state.projectFolder || '/path/to/project'"
+                           class="min-h-10 min-w-0 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-2 font-mono text-sm text-slate-200 outline-none transition placeholder:text-slate-600 focus:border-cyan-300 focus:ring-2 focus:ring-cyan-300/30 disabled:cursor-not-allowed disabled:opacity-45">
+                    <button type="button"
+                            @click="chooseAgentProjectFolder"
+                            :disabled="agentConfigScope !== 'project'"
+                            class="min-h-10 rounded-lg border border-[#303640] bg-[#151920] px-3 py-2 text-sm font-semibold text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-200 disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:border-[#303640] disabled:hover:text-slate-300">
+                      Choose
+                    </button>
+                  </span>
+                  <input ref="agentProjectFolderInput"
+                         type="file"
+                         webkitdirectory
+                         directory
+                         class="hidden"
+                         @change="handleAgentProjectFolderPicked">
+                </label>
+              </section>
+
+              <section aria-label="Enabled Agents" class="grid gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Enabled Agents</h3>
+                  <span class="font-mono text-xs text-slate-600">{{ enabledAgentConfigCount }} / {{ agentConfigAgents.length }}</span>
+                </div>
+                <div class="overflow-hidden rounded-lg border border-[#2a3038] bg-[#0f1115]">
+                  <label v-for="agent in agentConfigAgents"
+                         :key="agent.id"
+                         class="grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-t border-[#2a3038]/70 px-3 py-3 first:border-t-0">
+                    <input type="checkbox"
+                           v-model="agent.enabled"
+                           :aria-label="`Enable ${agent.name}`"
+                           class="mt-1 h-4 w-4 rounded border-slate-600 bg-[#151920] accent-cyan-500">
+                    <span class="min-w-0">
+                      <span class="block text-sm font-semibold text-slate-200">{{ agent.name }}</span>
+                      <span class="mt-1 block text-xs text-slate-500">{{ agent.detail }}</span>
+                    </span>
+                  </label>
+                </div>
+              </section>
+
+              <section aria-label="Agent permissions" class="grid gap-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Permissions</h3>
+                <div class="grid gap-2 sm:grid-cols-2">
+                  <label v-for="permission in agentPermissionOptions"
+                         :key="permission.id"
+                         class="grid min-h-16 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-lg border border-[#303640] bg-[#0f1115] px-3 py-3">
+                    <input type="checkbox"
+                           v-model="permission.enabled"
+                           :aria-label="`Allow ${permission.name}`"
+                           class="mt-1 h-4 w-4 rounded border-slate-600 bg-[#151920] accent-cyan-500">
+                    <span class="min-w-0">
+                      <span class="block text-sm font-semibold text-slate-200">{{ permission.name }}</span>
+                      <span class="mt-1 block text-xs text-slate-500">{{ permission.detail }}</span>
+                    </span>
+                  </label>
+                </div>
+              </section>
+
+              <section aria-label="Allowlisted Commands" class="grid gap-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Allowlisted Commands</h3>
+                  <span class="font-mono text-xs text-slate-600">{{ agentAllowlistedCommands.length }}</span>
+                </div>
+                <div class="max-h-40 overflow-auto rounded-lg border border-[#2a3038] bg-[#0f1115] font-mono text-xs">
+                  <div v-for="command in agentAllowlistedCommands"
+                       :key="command"
+                       class="border-t border-[#2a3038]/70 px-3 py-2 text-slate-300 first:border-t-0">
+                    {{ command }}
+                  </div>
+                </div>
+              </section>
+
+              <section aria-label="Manual MCP config" class="grid gap-3">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="text-xs font-semibold uppercase tracking-wide text-slate-500">Manual MCP Configs</h3>
+                  <button type="button"
+                          @click="copyManualMcpConfig"
+                          class="min-h-9 rounded-lg border border-[#303640] bg-[#151920] px-3 py-2 text-xs font-semibold text-slate-300 transition hover:border-cyan-400/50 hover:text-cyan-200">
+                    Copy
+                  </button>
+                </div>
+                <p class="text-xs text-slate-500">Use the matching block for Codex, Claude, Gemini, Cursor, OpenCode, or Pi.</p>
+                <pre aria-label="Manual MCP Config code block" class="max-h-72 overflow-auto rounded-lg border border-[#2a3038] bg-[#080a0d] p-4 font-mono text-xs leading-5 text-cyan-200"><code>{{ manualMcpConfig }}</code></pre>
+                <p class="font-mono text-xs text-slate-500">Saved MCP configs: {{ savedMcpConfigSummary }}</p>
+              </section>
+
+              <div class="flex flex-wrap justify-end gap-2 border-t border-[#2a3038] pt-4">
+                <button type="button"
+                        @click="resetAgentConfig"
+                        class="min-h-10 rounded-lg border border-[#303640] bg-[#0f1115] px-4 py-2 text-sm font-semibold text-slate-300 transition hover:text-slate-100">
+                  Reset to global
+                </button>
+                <button type="button"
+                        @click="saveAgentConfig"
+                        class="min-h-10 rounded-lg bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500">
+                  {{ agentConfigScope === 'global' ? 'Save global defaults' : 'Save project override' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script type="module">
+import { createApp, ref, computed, watch, onMounted, onUnmounted } from 'vue';
+
+createApp({
+  setup() {
+    const activeTab = ref('overview');
+    const state = ref({ apps: [], drivers: [], uptime: 0, version: '', projectFolder: '', mcp: { mode: 'off', enabledApps: [], activeSessions: 0 }, debug: { commands: [], sources: [], errorCount: 0 } });
+    const log = ref([]);
+    const debugFilter = ref('');
+    const debugSourceFilter = ref('all');
+    const selectedDebugCommandId = ref('');
+    const mcpTools = [
+      { name: 'hierarchy.query', detail: 'objects' },
+      { name: 'scenes.query', detail: 'scenes' },
+      { name: 'object.components', detail: 'by path' },
+      { name: 'component.fields', detail: 'fields' },
+      { name: 'commands.list', detail: 'tester map' },
+      { name: 'command.invoke', detail: 'raw command' },
+    ];
+    const agentConfigOpen = ref(false);
+    const agentConfigScope = ref('project');
+    const agentProjectFolder = ref('');
+    const agentProjectFolderInput = ref(null);
+    const createDefaultAgentConfigAgents = () => [
+      { id: 'codex', name: 'Codex', detail: 'Write .codex/config.toml plus legacy JSON MCP config.', enabled: true },
+      { id: 'claude', name: 'Claude', detail: 'Write Claude Code project or user MCP config.', enabled: true },
+      { id: 'gemini', name: 'Gemini', detail: 'Write Gemini CLI MCP settings.', enabled: true },
+      { id: 'cursor', name: 'Cursor', detail: 'Write Cursor MCP config.', enabled: true },
+      { id: 'opencode', name: 'OpenCode', detail: 'Write OpenCode remote MCP config.', enabled: true },
+      { id: 'pi', name: 'Pi', detail: 'Write Pi agent MCP config.', enabled: true },
+    ];
+    const createDefaultAgentPermissionOptions = () => [
+      { id: 'inspect', name: 'Inspect scene state', detail: 'Hierarchy, scenes, components, and fields.', enabled: true },
+      { id: 'commands', name: 'Run tester commands', detail: 'Invoke the command surface exposed to tester code.', enabled: true },
+      { id: 'multi-app', name: 'Use multiple apps', detail: 'Allow agents to target more than one connected app.', enabled: true },
+      { id: 'copy-config', name: 'Copy config blocks', detail: 'Expose paste-ready MCP config snippets.', enabled: true },
+    ];
+    const agentConfigAgents = ref(createDefaultAgentConfigAgents());
+    const agentPermissionOptions = ref(createDefaultAgentPermissionOptions());
+    const agentAllowlistedCommands = [
+      'hierarchy.query',
+      'scenes.query',
+      'object.components',
+      'component.fields',
+      'commands.list',
+      'command.invoke',
+    ];
+
+    // ── Inspector state ──────────────────────────────────────────────
+    const insp = ref({
+      selectedApp: '',
+      loading: false,
+      phase: '',       // 'scenes' | 'objects'
+      error: null,
+      scenes: [],
+      currentScene: null,
+      rawObjects: [],
+      objectsLoaded: false,
+    });
+
+    const maxDepth    = ref(0);     // 0 = unlimited
+    const autoUpdate  = ref(false);
+    const autoIntervalMs = ref(2000);
+    const objectFilter = ref('');
+    let autoTimer = null;
+
+    const inspComputedScene = computed(() => {
+      const cs = insp.value.currentScene;
+      if (!cs) return '';
+      if (typeof cs === 'string') return cs;
+      if (cs && typeof cs === 'object' && 'name' in cs) return cs.name;
+      return JSON.stringify(cs);
+    });
+
+    function buildFlatObjects(objects, maxD) {
+      // AltObject uses transformId (own) and transformParentId (parent's transformId) for tree linkage.
+      const map = new Map(objects.map(o => [o.transformId, { ...o, children: [] }]));
+      const roots = [];
+      for (const node of map.values()) {
+        const parent = map.get(node.transformParentId);
+        if (parent) parent.children.push(node);
+        else roots.push(node);
+      }
+      const flat = [];
+      function walk(nodes, depth) {
+        for (const n of nodes) {
+          flat.push({ id: n.id, name: n.name, depth });
+          if (maxD === 0 || depth < maxD) walk(n.children, depth + 1);
+        }
+      }
+      walk(roots, 0);
+      return flat;
+    }
+
+    // flatObjects is a computed so depth changes re-render without re-fetching
+    const flatObjects = computed(() => buildFlatObjects(insp.value.rawObjects, maxDepth.value));
+    const filteredFlatObjects = computed(() =>
+      flatObjects.value.filter(obj => fuzzyNodeNameMatches(obj.name, objectFilter.value))
+    );
+
+    function fuzzyNodeNameMatches(nodeName, query) {
+      const normalizedQuery = String(query ?? '').toLowerCase().replace(/\s+/g, '');
+      if (!normalizedQuery) return true;
+
+      let queryIndex = 0;
+      const normalizedName = String(nodeName ?? '').toLowerCase();
+      for (const char of normalizedName) {
+        if (char === normalizedQuery[queryIndex]) queryIndex += 1;
+        if (queryIndex === normalizedQuery.length) return true;
+      }
+      return false;
+    }
+
+    function stopAutoUpdate() {
+      if (autoTimer !== null) { clearInterval(autoTimer); autoTimer = null; }
+    }
+
+    function startAutoUpdate() {
+      stopAutoUpdate();
+      autoTimer = setInterval(() => {
+        if (!insp.value.loading && insp.value.selectedApp) inspectRefresh();
+      }, autoIntervalMs.value);
+    }
+
+    // restart timer when interval changes while auto-update is on
+    watch(autoIntervalMs, () => { if (autoUpdate.value) startAutoUpdate(); });
+    // stop and reset when app selection changes
+    watch(() => insp.value.selectedApp, () => { stopAutoUpdate(); autoUpdate.value = false; });
+    watch(autoUpdate, (on) => { if (on) startAutoUpdate(); else stopAutoUpdate(); });
+
+    async function inspectScenes() {
+      if (!insp.value.selectedApp || insp.value.loading) return;
+      insp.value.loading = true;
+      insp.value.phase = 'scenes';
+      insp.value.error = null;
+      insp.value.scenes = [];
+      insp.value.currentScene = null;
+      insp.value.rawObjects = [];
+      insp.value.objectsLoaded = false;
+      try {
+        const r = await fetch(`/inspector/${encodeURIComponent(insp.value.selectedApp)}`);
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        insp.value.scenes = data.scenes ?? [];
+        insp.value.currentScene = data.currentScene ?? null;
+      } catch (e) {
+        insp.value.error = e.message;
+        autoUpdate.value = false;  // pause auto-update so the error stays readable
+      } finally {
+        insp.value.loading = false;
+        insp.value.phase = '';
+      }
+    }
+
+    async function inspectObjects() {
+      if (!insp.value.selectedApp || insp.value.loading) return;
+      insp.value.loading = true;
+      insp.value.phase = 'objects';
+      insp.value.error = null;
+      try {
+        const r = await fetch(`/inspector/${encodeURIComponent(insp.value.selectedApp)}/objects`);
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        insp.value.rawObjects = data.objects ?? [];
+        insp.value.objectsLoaded = true;
+      } catch (e) {
+        insp.value.error = e.message;
+        autoUpdate.value = false;  // pause auto-update so the error stays readable
+      } finally {
+        insp.value.loading = false;
+        insp.value.phase = '';
+      }
+    }
+
+    // Always loads scenes + objects. If scenes fail, skip objects so the error stays visible.
+    async function inspectRefresh() {
+      await inspectScenes();
+      if (!insp.value.error) await inspectObjects();
+    }
+    // ── end Inspector ────────────────────────────────────────────────
+    let es = null;
+    let uptimeInterval = null;
+
+    const pairedCount = computed(() =>
+      state.value.drivers.filter(d => d.paired).length
+    );
+    const waitingAppCount = computed(() =>
+      state.value.apps.filter(app => !isPaired(app.appName)).length
+    );
+    const connectingDriverCount = computed(() =>
+      state.value.drivers.filter(d => !d.paired).length
+    );
+    const attentionCount = computed(() =>
+      waitingAppCount.value + connectingDriverCount.value
+    );
+    const enabledMcpAppCount = computed(() => {
+      const mode = state.value.mcp?.mode ?? 'off';
+      if (mode === 'all') return state.value.apps.length;
+      if (mode === 'selected') return state.value.mcp?.enabledApps?.length ?? 0;
+      return 0;
+    });
+    const mcpModeLabel = computed(() => {
+      const mode = state.value.mcp?.mode ?? 'off';
+      if (mode === 'all') return 'All Apps';
+      if (mode === 'selected') return 'Selected Apps';
+      return 'Off';
+    });
+    const mcpMode = computed(() => state.value.mcp?.mode ?? 'off');
+    const debugCommands = computed(() => state.value.debug?.commands ?? []);
+    const debugSources = computed(() => state.value.debug?.sources ?? []);
+    const debugErrorCount = computed(() => state.value.debug?.errorCount ?? 0);
+    const filteredDebugCommands = computed(() => {
+      const source = debugSourceFilter.value;
+      const query = debugFilter.value.trim().toLowerCase();
+      return debugCommands.value.filter(command => {
+        if (source !== 'all' && command.source?.type !== source) return false;
+        if (!query) return true;
+        return [
+          command.appName,
+          command.commandName,
+          command.toolName,
+          command.messageId,
+          command.status,
+          command.source?.type,
+          command.source?.label,
+          payloadPreview(command.requestPayload),
+          payloadPreview(command.responsePayload),
+        ].some(value => String(value ?? '').toLowerCase().includes(query));
+      });
+    });
+    const selectedDebugCommand = computed(() => {
+      const commands = debugCommands.value;
+      if (!commands.length) return null;
+      return commands.find(command => command.id === selectedDebugCommandId.value) ?? commands[0];
+    });
+    const websocketEndpoint = computed(() => {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${wsProtocol}//${window.location.host || 'current-host'}`;
+    });
+    const mcpEndpoint = computed(() => `${window.location.protocol}//${window.location.host || 'current-host'}/mcp`);
+    const enabledAgentConfigCount = computed(() => agentConfigAgents.value.filter(agent => agent.enabled).length);
+    const agentConfigTarget = computed(() => {
+      if (agentConfigScope.value === 'global') return 'Global defaults';
+      return agentProjectFolder.value || 'Current project folder';
+    });
+    const manualMcpConfig = computed(() => [
+      '# Codex (.codex/config.toml or ~/.codex/config.toml)',
+      '[mcp_servers.open-uitester-server]',
+      `url = "${mcpEndpoint.value}"`,
+      'enabled = true',
+      '',
+      '# Claude Code project (.mcp.json) or user (~/.claude.json)',
+      JSON.stringify({
+        mcpServers: {
+          "open-uitester-server": {
+            type: "http",
+            url: mcpEndpoint.value,
+          },
+        },
+      }, null, 2),
+      '',
+      '# Gemini CLI (.gemini/settings.json)',
+      JSON.stringify({
+        mcpServers: {
+          "open-uitester-server": {
+            httpUrl: mcpEndpoint.value,
+          },
+        },
+      }, null, 2),
+      '',
+      '# Cursor (.cursor/mcp.json)',
+      JSON.stringify({
+        mcpServers: {
+          "open-uitester-server": {
+            url: mcpEndpoint.value,
+          },
+        },
+      }, null, 2),
+      '',
+      '# OpenCode (opencode.json or ~/.config/opencode/opencode.json)',
+      JSON.stringify({
+        mcp: {
+          "open-uitester-server": {
+            type: "remote",
+            url: mcpEndpoint.value,
+            enabled: true,
+          },
+        },
+      }, null, 2),
+      '',
+      '# Pi (.pi/mcp.json or ~/.pi/agent/mcp.json)',
+      JSON.stringify({
+        mcpServers: {
+          "open-uitester-server": {
+            transport: "streamable-http",
+            url: mcpEndpoint.value,
+          },
+        },
+      }, null, 2),
+    ].join('\n'));
+    const savedMcpConfigSummary = computed(() => agentConfigScope.value === 'global'
+      ? '~/.codex/config.toml, ~/.codex/mcp.json, ~/.claude.json, ~/.gemini/settings.json, ~/.cursor/mcp.json, ~/.config/opencode/opencode.json, ~/.pi/agent/mcp.json'
+      : '.codex/config.toml, .codex/mcp.json, .mcp.json, .gemini/settings.json, .cursor/mcp.json, opencode.json, .pi/mcp.json');
+
+    const uptimeFormatted = computed(() => {
+      const s = Math.floor(state.value.uptime);
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      const sec = s % 60;
+      return `${h}h ${m}m ${sec}s`;
+    });
+
+    function isPaired(appName) {
+      return state.value.drivers.some(d => d.appName === appName && d.paired);
+    }
+
+    function isMcpAppEnabled(appName) {
+      const mode = state.value.mcp?.mode ?? 'off';
+      if (mode === 'all') return true;
+      if (mode !== 'selected') return false;
+      return (state.value.mcp?.enabledApps ?? []).includes(appName);
+    }
+
+    function selectDebugCommand(id) {
+      selectedDebugCommandId.value = id;
+    }
+
+    function payloadPreview(payload) {
+      if (payload === undefined || payload === null) return '';
+      try {
+        return JSON.stringify(payload);
+      } catch {
+        return String(payload);
+      }
+    }
+
+    function formatPayload(payload) {
+      if (payload === undefined || payload === null) return '';
+      try {
+        return JSON.stringify(payload, null, 2);
+      } catch {
+        return String(payload);
+      }
+    }
+
+    function formatDebugTime(value) {
+      if (!value) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleTimeString(undefined, {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        fractionalSecondDigits: 3,
+      });
+    }
+
+    function debugSourceClass(type) {
+      if (type === 'mcp') return 'border-teal-400/30 bg-teal-400/10 text-teal-300';
+      if (type === 'skill') return 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300';
+      return 'border-cyan-400/30 bg-cyan-400/10 text-cyan-300';
+    }
+
+    function debugStatusClass(status) {
+      if (status === 'ok') return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300';
+      if (status === 'pending') return 'border-amber-400/25 bg-amber-400/10 text-amber-300';
+      return 'border-rose-400/25 bg-rose-400/10 text-rose-300';
+    }
+
+    function addLog(msg, cls = 'text-slate-400') {
+      const time = new Date().toLocaleTimeString();
+      log.value.unshift({ time, msg, cls });
+      if (log.value.length > 100) log.value.pop();
+    }
+
+    async function fetchState() {
+      try {
+        const r = await fetch('/dashboard/state');
+        const nextState = await r.json();
+        state.value = nextState;
+        if (!agentProjectFolder.value && nextState.projectFolder) {
+          agentProjectFolder.value = nextState.projectFolder;
+        }
+        const commands = nextState.debug?.commands ?? [];
+        if (commands.length && !commands.some(command => command.id === selectedDebugCommandId.value)) {
+          selectedDebugCommandId.value = commands[0].id;
+        }
+      } catch {}
+    }
+
+    async function updateMcpConfig(mode, enabledApps) {
+      const r = await fetch('/dashboard/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode, enabledApps }),
+      });
+      const data = await r.json();
+      if (data.error) throw new Error(data.error);
+      state.value = { ...state.value, mcp: data.mcp };
+    }
+
+    async function setMcpMode(mode) {
+      try {
+        const current = state.value.mcp ?? { mode: 'off', enabledApps: [], activeSessions: 0 };
+        await updateMcpConfig(mode, current.enabledApps ?? []);
+      } catch (e) {
+        addLog(`MCP config failed: ${e.message}`, 'text-red-500');
+      }
+    }
+
+    async function toggleMcpApp(appName) {
+      if ((state.value.mcp?.mode ?? 'off') !== 'selected') return;
+      const enabled = new Set(state.value.mcp?.enabledApps ?? []);
+      if (enabled.has(appName)) enabled.delete(appName);
+      else enabled.add(appName);
+      try {
+        await updateMcpConfig('selected', Array.from(enabled));
+      } catch (e) {
+        addLog(`MCP config failed: ${e.message}`, 'text-red-500');
+      }
+    }
+
+    async function copyManualMcpConfig() {
+      try {
+        if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+        await navigator.clipboard.writeText(manualMcpConfig.value);
+        addLog('MCP config block copied', 'text-cyan-400');
+      } catch (e) {
+        addLog(`MCP config copy failed: ${e.message}`, 'text-amber-400');
+      }
+    }
+
+    async function chooseAgentProjectFolder() {
+      try {
+        if ('showDirectoryPicker' in window) {
+          const dir = await window.showDirectoryPicker({ mode: 'read' });
+          agentProjectFolder.value = dir.name;
+          addLog(`Project folder selected: ${dir.name}`, 'text-cyan-400');
+          return;
+        }
+        agentProjectFolderInput.value?.click();
+      } catch (e) {
+        if (e?.name === 'AbortError') return;
+        addLog(`Project folder selection failed: ${e.message}`, 'text-amber-400');
+      }
+    }
+
+    function handleAgentProjectFolderPicked(event) {
+      const input = event.target;
+      const file = input?.files?.[0];
+      const relativePath = file?.webkitRelativePath ?? '';
+      const folder = relativePath.split('/')[0] || file?.name || '';
+      if (folder) {
+        agentProjectFolder.value = folder;
+        addLog(`Project folder selected: ${folder}`, 'text-cyan-400');
+      }
+      if (input) input.value = '';
+    }
+
+    async function loadAgentConfig() {
+      try {
+        const r = await fetch(`/dashboard/agent-config?scope=${encodeURIComponent(agentConfigScope.value)}`);
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        const saved = data.config ?? {};
+        if (saved.scope === 'global' || saved.scope === 'project') agentConfigScope.value = saved.scope;
+        if (typeof saved.projectFolder === 'string') agentProjectFolder.value = saved.projectFolder;
+        if (saved.agents && typeof saved.agents === 'object') {
+          agentConfigAgents.value = createDefaultAgentConfigAgents().map(agent => ({
+            ...agent,
+            enabled: Boolean(saved.agents[agent.id] ?? agent.enabled),
+          }));
+        }
+        if (saved.permissions && typeof saved.permissions === 'object') {
+          agentPermissionOptions.value = createDefaultAgentPermissionOptions().map(permission => ({
+            ...permission,
+            enabled: Boolean(saved.permissions[permission.id] ?? permission.enabled),
+          }));
+        }
+      } catch (e) {
+        addLog(`Agent config load failed: ${e.message}`, 'text-amber-400');
+      }
+    }
+
+    async function saveAgentConfig() {
+      try {
+        const agents = Object.fromEntries(agentConfigAgents.value.map(agent => [agent.id, agent.enabled]));
+        const permissions = Object.fromEntries(agentPermissionOptions.value.map(permission => [permission.id, permission.enabled]));
+        const r = await fetch('/dashboard/agent-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scope: agentConfigScope.value,
+            projectFolder: agentProjectFolder.value || state.value.projectFolder,
+            mcpEndpoint: mcpEndpoint.value,
+            agents,
+            permissions,
+            allowlistedCommands: agentAllowlistedCommands,
+          }),
+        });
+        const data = await r.json();
+        if (data.error) throw new Error(data.error);
+        if (data.config?.projectFolder) agentProjectFolder.value = data.config.projectFolder;
+        addLog(`Agent MCP configs saved: ${data.paths?.codexConfig ?? '.codex/config.toml'}`, 'text-cyan-400');
+      } catch (e) {
+        addLog(`Agent config save failed: ${e.message}`, 'text-amber-400');
+      }
+    }
+
+    function resetAgentConfig() {
+      agentConfigAgents.value = createDefaultAgentConfigAgents();
+      agentPermissionOptions.value = createDefaultAgentPermissionOptions();
+      if (agentConfigScope.value === 'project') agentProjectFolder.value = '';
+      addLog('Agent config reset to global defaults', 'text-cyan-400');
+    }
+
+    onMounted(() => {
+      loadAgentConfig();
+      fetchState();
+
+      es = new EventSource('/dashboard/events');
+
+      es.addEventListener('appConnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`App connected: ${d.appName} (${d.platform})`, 'text-sky-400');
+        fetchState();
+      });
+
+      es.addEventListener('appDisconnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`App disconnected: ${d.appName}`, 'text-red-400');
+        fetchState();
+      });
+
+      es.addEventListener('driverConnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`Driver connected: ${d.driverType} → ${d.appName}`, 'text-emerald-400');
+        fetchState();
+      });
+
+      es.addEventListener('driverDisconnected', e => {
+        const d = JSON.parse(e.data);
+        addLog(`Driver disconnected from: ${d.appName}`, 'text-amber-400');
+        fetchState();
+      });
+
+      es.addEventListener('mcpConfigChanged', e => {
+        const d = JSON.parse(e.data);
+        addLog(`MCP mode changed: ${d.mode}`, 'text-teal-400');
+        fetchState();
+      });
+
+      es.addEventListener('debugCommandChanged', e => {
+        const d = JSON.parse(e.data);
+        const command = d.command ?? {};
+        addLog(`Command ${command.status ?? 'updated'}: ${command.commandName ?? 'unknown'}`, command.status === 'ok' ? 'text-emerald-400' : 'text-cyan-400');
+        fetchState();
+      });
+
+      es.onerror = () => addLog('SSE connection lost — retrying…', 'text-red-500');
+
+      // R3-1: increment uptime locally instead of polling the server every second
+      uptimeInterval = setInterval(() => {
+        state.value = { ...state.value, uptime: state.value.uptime + 1 };
+      }, 1000);
+    });
+
+    onUnmounted(() => {
+      es?.close();
+      clearInterval(uptimeInterval);
+      stopAutoUpdate();
+    });
+
+    return {
+      activeTab, state, log, pairedCount, waitingAppCount, connectingDriverCount, attentionCount, enabledMcpAppCount, websocketEndpoint, mcpEndpoint, mcpMode, mcpModeLabel, uptimeFormatted, isPaired,
+      insp, flatObjects, filteredFlatObjects,
+      currentSceneName: inspComputedScene,
+      maxDepth, autoUpdate, autoIntervalMs, objectFilter,
+      inspectRefresh, mcpTools, setMcpMode, toggleMcpApp, isMcpAppEnabled,
+      debugFilter, debugSourceFilter, debugCommands, debugSources, debugErrorCount, filteredDebugCommands, selectedDebugCommand, selectDebugCommand, payloadPreview, formatPayload, formatDebugTime, debugSourceClass, debugStatusClass,
+      agentConfigOpen, agentConfigScope, agentProjectFolder, agentProjectFolderInput, agentConfigAgents, agentPermissionOptions, agentAllowlistedCommands, enabledAgentConfigCount, agentConfigTarget, manualMcpConfig, savedMcpConfigSummary, copyManualMcpConfig, chooseAgentProjectFolder, handleAgentProjectFolderPicked, saveAgentConfig, resetAgentConfig,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
