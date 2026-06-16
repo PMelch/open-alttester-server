@@ -6,7 +6,7 @@
   <title>open-uitester-server | Open UITester Server npm project</title>
   <meta name="description" content="open-uitester-server: independent drop-in alternative to commercial AltTester® Desktop. Not affiliated with Altom®. Unity SDK WebSocket relay and dashboard for Node.js and Bun.">
   <meta name="robots" content="index, follow">
-  <meta name="theme-color" content="#111310">
+  <meta name="theme-color" content="#fafbf7">
   <link rel="canonical" href="https://pmelch.github.io/open-uitester-server/">
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <meta property="og:type" content="website">
@@ -101,19 +101,15 @@
       color-scheme: light;
       --ink: #111310;
       --muted: #5f665d;
-      --paper: #fbfcf8;
+      --paper: #fafbf7;
       --sheet: #ffffff;
-      --line: #d9dfd3;
+      --line: #e2e8dc;
       --charcoal: #151713;
       --green: #00a676;
-      --green-dark: #007f5f;
       --amber: #f5b700;
       --red: #e94f37;
-      --blue: #2f6fed;
-      --violet: #6f4bd8;
-      --shadow: 0 24px 80px rgb(17 19 16 / 16%);
-      --display: "Avenir Next Condensed", "Bahnschrift", "Arial Narrow", sans-serif;
-      --body: "Aptos", "Avenir Next", "Segoe UI", sans-serif;
+      --column: 640px;
+      --body: "Aptos", "Segoe UI", system-ui, sans-serif;
       --mono: "SFMono-Regular", "Cascadia Code", "Liberation Mono", monospace;
     }
 
@@ -155,6 +151,13 @@
       font-family: var(--mono);
     }
 
+    .column {
+      margin: 0 auto;
+      max-width: var(--column);
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+    }
+
     .skip-link {
       left: 1rem;
       padding: 0.75rem 1rem;
@@ -172,13 +175,13 @@
 
     .site-header {
       align-items: center;
-      background: rgb(251 252 248 / 86%);
+      background: rgb(250 251 247 / 92%);
+      backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--line);
-      backdrop-filter: blur(16px);
       display: flex;
-      gap: 1rem;
+      gap: 0.75rem;
       justify-content: space-between;
-      padding: 0.85rem clamp(1rem, 4vw, 3.5rem);
+      padding: 0.65rem 1.25rem;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -187,9 +190,9 @@
     .brand {
       align-items: center;
       display: inline-flex;
-      gap: 0.7rem;
-      font-weight: 800;
-      letter-spacing: 0;
+      font-size: 0.88rem;
+      font-weight: 650;
+      gap: 0.5rem;
       text-decoration: none;
       white-space: nowrap;
     }
@@ -197,380 +200,336 @@
     .brand-mark {
       align-items: center;
       background: var(--charcoal);
-      border-radius: 6px;
+      border-radius: 5px;
       color: var(--green);
       display: inline-flex;
       font-family: var(--mono);
-      height: 2rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      height: 1.5rem;
       justify-content: center;
-      width: 2rem;
+      width: 1.5rem;
     }
 
     .nav {
       align-items: center;
       display: flex;
       flex-wrap: wrap;
-      gap: 0.55rem;
+      gap: 0.15rem;
       justify-content: flex-end;
     }
 
     .nav a {
-      border: 1px solid transparent;
-      border-radius: 6px;
+      border-radius: 5px;
       color: var(--muted);
-      font-size: 0.9rem;
-      padding: 0.45rem 0.65rem;
+      font-size: 0.78rem;
+      padding: 0.25rem 0.45rem;
       text-decoration: none;
     }
 
     .nav a:hover,
     .nav a:focus-visible {
-      border-color: var(--line);
       color: var(--ink);
       outline: none;
     }
 
     .hero {
-      background:
-        linear-gradient(90deg, rgb(17 19 16 / 92%) 0%, rgb(17 19 16 / 74%) 43%, rgb(17 19 16 / 18%) 100%),
-        url("assets/dashboard-live.png") center right / cover no-repeat,
-        var(--charcoal);
-      color: white;
-      min-height: min(690px, 76svh);
-      padding: clamp(3.5rem, 7vw, 5.2rem) clamp(1rem, 4vw, 3.5rem) clamp(2.3rem, 5vw, 3.5rem);
-      position: relative;
-    }
-
-    .hero-inner {
-      max-width: 720px;
-      position: relative;
-      z-index: 1;
+      padding: 2rem 0 1.5rem;
     }
 
     .eyebrow {
-      color: var(--amber);
+      color: var(--muted);
       font-family: var(--mono);
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      margin: 0 0 1rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.45rem;
       text-transform: uppercase;
     }
 
     h1,
     h2,
     h3 {
-      font-family: var(--display);
-      letter-spacing: 0;
-      line-height: 0.96;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
       margin: 0;
     }
 
-    .hero-package {
-      color: rgb(255 255 255 / 78%);
-      font-family: var(--mono);
-      font-size: 0.95rem;
-      margin: 0.85rem 0 0;
-    }
-
-    .hero-package a {
-      color: var(--amber);
-    }
-
-    .hero-package code {
-      background: rgb(255 255 255 / 10%);
-      border: 1px solid rgb(255 255 255 / 18%);
-      border-radius: 6px;
-      color: var(--amber);
-      font-size: 0.92em;
-      padding: 0.12rem 0.45rem;
-    }
-
     h1 {
-      font-size: clamp(4rem, 10vw, 7.6rem);
-      max-width: 10ch;
-      text-transform: uppercase;
+      font-size: clamp(2rem, 5vw, 2.5rem);
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .hero-tagline {
+      color: var(--ink);
+      font-size: 1.05rem;
+      font-weight: 650;
+      letter-spacing: -0.02em;
+      line-height: 1.35;
+      margin: 0.4rem 0 0;
     }
 
     h2 {
-      font-size: clamp(2.5rem, 6vw, 5.6rem);
-      max-width: 12ch;
-      text-transform: uppercase;
+      font-size: 1.15rem;
     }
 
     h3 {
-      font-size: clamp(1.45rem, 3vw, 2.3rem);
-      text-transform: uppercase;
+      font-size: 0.92rem;
+    }
+
+    .hero-package {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      margin: 0.55rem 0 0;
+    }
+
+    .hero-package a {
+      color: var(--green);
+    }
+
+    .hero-package code {
+      background: #eef1ea;
+      border-radius: 5px;
+      font-size: 0.92em;
+      padding: 0.1rem 0.4rem;
     }
 
     .hero-copy {
-      color: rgb(255 255 255 / 84%);
-      font-size: clamp(1.05rem, 2.2vw, 1.35rem);
-      margin: 1.35rem 0 0;
-      max-width: 44rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin: 0.55rem 0 0;
     }
 
     .actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.8rem;
-      margin-top: 2rem;
+      gap: 0.45rem;
+      margin-top: 0.85rem;
     }
 
     .button {
-      align-items: center;
-      border: 2px solid transparent;
       border-radius: 6px;
       display: inline-flex;
-      font-weight: 800;
-      justify-content: center;
-      min-height: 2.9rem;
-      padding: 0.75rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.42rem 0.7rem;
       text-decoration: none;
     }
 
     .button.primary {
       background: var(--green);
-      color: var(--ink);
+      color: #fff;
     }
 
     .button.secondary {
-      background: rgb(255 255 255 / 8%);
-      border-color: rgb(255 255 255 / 36%);
-      color: white;
+      border: 1px solid var(--line);
+      color: var(--ink);
     }
 
     .button:hover,
     .button:focus-visible {
-      outline: 3px solid var(--amber);
-      outline-offset: 3px;
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
     }
 
     .install-strip {
-      background: var(--amber);
-      color: var(--ink);
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: minmax(0, 1fr) auto;
-      padding: 1rem clamp(1rem, 4vw, 3.5rem);
+      background: var(--sheet);
+      border-bottom: 1px solid var(--line);
+      border-top: 1px solid var(--line);
+      font-size: 0.82rem;
+      padding: 0.65rem 0;
+    }
+
+    .install-strip .column {
+      align-items: center;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      justify-content: space-between;
     }
 
     .install-strip code {
-      background: var(--ink);
-      border-radius: 6px;
-      color: #fafff2;
-      display: inline-block;
-      overflow-x: auto;
-      padding: 0.45rem 0.65rem;
-      max-width: 100%;
-      vertical-align: middle;
+      background: #eef1ea;
+      border-radius: 5px;
+      font-size: 0.78rem;
+      padding: 0.2rem 0.45rem;
     }
 
     .copy-button {
       background: var(--ink);
       border: 0;
-      border-radius: 6px;
-      color: white;
+      border-radius: 5px;
+      color: #fff;
       cursor: pointer;
-      font: 800 0.9rem var(--body);
-      min-height: 2.6rem;
-      padding: 0.55rem 0.8rem;
+      font: 600 0.76rem var(--body);
+      padding: 0.35rem 0.65rem;
+    }
+
+    .copy-button:hover,
+    .copy-button:focus-visible {
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
     }
 
     .section {
-      padding: clamp(3.5rem, 8vw, 6.5rem) clamp(1rem, 4vw, 3.5rem);
+      padding: 1.75rem 0;
     }
 
-    .section.dark {
-      background: var(--charcoal);
-      color: white;
-    }
-
-    .section.tight {
-      padding-top: clamp(2rem, 5vw, 4rem);
-    }
-
-    .section-head {
-      align-items: end;
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: minmax(0, 0.9fr) minmax(18rem, 0.75fr);
-      margin-bottom: 2rem;
+    .section + .section {
+      border-top: 1px solid var(--line);
     }
 
     .lede {
       color: var(--muted);
-      font-size: 1.05rem;
-      margin: 0;
-      max-width: 46rem;
+      font-size: 0.9rem;
+      line-height: 1.55;
+      margin: 0.55rem 0 0;
     }
 
-    .dark .lede {
-      color: rgb(255 255 255 / 70%);
-    }
-
-    .feature-grid {
+    .feature-list {
+      border-left: 2px solid var(--green);
       display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+      padding-left: 0.85rem;
     }
 
-    .feature-card {
-      background: var(--sheet);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      min-height: 15rem;
-      padding: 1.1rem;
-      position: relative;
-    }
-
-    .feature-card::before {
-      background: var(--accent, var(--green));
-      content: "";
-      display: block;
-      height: 0.38rem;
-      margin: -1.1rem -1.1rem 1.1rem;
-    }
-
-    .feature-card p {
+    .feature-item {
       color: var(--muted);
-      margin: 0.85rem 0 0;
+      font-size: 0.84rem;
+      line-height: 1.45;
     }
 
-    .tag {
-      color: var(--muted);
-      display: block;
-      font-family: var(--mono);
+    .feature-item h3 {
+      color: var(--ink);
+      font-size: 0.88rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .feature-item p {
+      margin: 0;
+    }
+
+    .feature-item code {
       font-size: 0.78rem;
-      margin-bottom: 1.3rem;
-      text-transform: uppercase;
     }
 
-    .showcase {
-      display: grid;
-      gap: clamp(1rem, 3vw, 2rem);
-      grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.75fr);
-      align-items: center;
-    }
-
-    .screenshot-frame {
-      background: #0e1116;
-      border: 1px solid #2a3038;
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-      margin: 0;
+    .screenshot {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      margin: 0.75rem 0 0;
       overflow: hidden;
     }
 
-    .screenshot-frame img {
-      aspect-ratio: var(--screen-ratio, 1665 / 826);
+    .screenshot img {
       height: auto;
-      object-fit: cover;
       width: 100%;
     }
 
-    .screenshot-caption {
-      color: rgb(255 255 255 / 68%);
-      font-size: 0.92rem;
-      padding: 0.75rem 0.9rem;
+    .screenshot figcaption {
+      background: var(--sheet);
+      color: var(--muted);
+      font-size: 0.74rem;
+      line-height: 1.45;
+      padding: 0.45rem 0.55rem;
     }
 
-    .agent-showcase {
+    .stat-list {
       display: grid;
-      gap: clamp(1rem, 3vw, 2rem);
-      grid-template-columns: minmax(0, 1.05fr) minmax(19rem, 0.85fr);
-      align-items: start;
+      gap: 0.45rem;
+      margin-top: 0.75rem;
     }
 
-    .agent-copy {
+    .stat {
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
+    }
+
+    .stat strong {
+      color: var(--green);
+      font-family: var(--mono);
+      font-weight: 600;
+    }
+
+    .agent-block {
       display: grid;
       gap: 1rem;
+      margin-top: 0.75rem;
     }
 
-    .agent-copy h3 {
-      font-size: 1.55rem;
+    .agent-block h3 {
+      font-size: 0.88rem;
+      margin-bottom: 0.2rem;
     }
 
-    .agent-copy p {
+    .agent-block p {
       color: var(--muted);
-      margin: 0.6rem 0 0;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      margin: 0;
     }
 
     .code-snippet {
       background: #10130f;
       border: 1px solid #2a3027;
-      border-radius: 8px;
+      border-radius: 6px;
       color: #f2f7ea;
-      font-size: 0.82rem;
+      font-size: 0.78rem;
       line-height: 1.55;
       margin: 0;
       overflow-x: auto;
       overflow-wrap: anywhere;
-      padding: 1rem;
+      padding: 0.75rem;
       white-space: pre-wrap;
     }
 
-    .gallery-grid {
+    .workflow-list {
+      border-left: 2px solid var(--red);
       display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      margin-top: 1rem;
-    }
-
-    .metric-stack {
-      display: grid;
-      gap: 0.8rem;
-    }
-
-    .metric {
-      border-bottom: 1px solid rgb(255 255 255 / 16%);
-      display: grid;
-      gap: 0.25rem;
-      padding: 0 0 0.8rem;
-    }
-
-    .metric strong {
-      color: var(--amber);
-      font-family: var(--display);
-      font-size: clamp(2.6rem, 6vw, 5rem);
-      line-height: 0.9;
-    }
-
-    .metric span {
-      color: rgb(255 255 255 / 70%);
-    }
-
-    .workflow {
-      display: grid;
-      gap: 1rem;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.65rem;
+      margin-top: 0.75rem;
+      padding-left: 0.85rem;
     }
 
     .workflow-step {
-      background: var(--sheet);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 1.1rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
     }
 
     .workflow-step .number {
       color: var(--red);
       font-family: var(--mono);
-      font-weight: 800;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .workflow-step h3 {
+      color: var(--ink);
+      display: inline;
+      font-size: 0.88rem;
+    }
+
+    .workflow-step p {
+      margin: 0.2rem 0 0;
     }
 
     .mockups {
       display: grid;
-      gap: 1rem;
-      grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-      margin-top: 1rem;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
     }
 
     .terminal,
     .bridge {
       background: #10130f;
       border: 1px solid #2a3027;
-      border-radius: 8px;
+      border-radius: 6px;
       color: #f2f7ea;
       overflow: hidden;
     }
@@ -579,15 +538,15 @@
       align-items: center;
       border-bottom: 1px solid #2a3027;
       display: flex;
-      gap: 0.4rem;
-      padding: 0.75rem;
+      gap: 0.35rem;
+      padding: 0.5rem 0.65rem;
     }
 
     .dot {
       background: var(--red);
       border-radius: 50%;
-      height: 0.72rem;
-      width: 0.72rem;
+      height: 0.5rem;
+      width: 0.5rem;
     }
 
     .dot:nth-child(2) {
@@ -599,9 +558,11 @@
     }
 
     .terminal pre {
+      font-size: 0.74rem;
+      line-height: 1.55;
       margin: 0;
       overflow-x: auto;
-      padding: 1rem;
+      padding: 0.75rem;
     }
 
     .terminal .comment {
@@ -609,112 +570,101 @@
     }
 
     .bridge {
-      padding: 1rem;
+      font-size: 0.78rem;
+      padding: 0.75rem;
     }
 
     .bridge-lane {
       align-items: center;
       display: grid;
-      gap: 0.7rem;
+      gap: 0.5rem;
       grid-template-columns: 1fr auto 1fr auto 1fr;
-      min-height: 9rem;
     }
 
     .bridge-node {
-      background: rgb(255 255 255 / 7%);
-      border: 1px solid rgb(255 255 255 / 14%);
-      border-radius: 8px;
-      min-height: 6rem;
-      padding: 0.9rem;
+      background: rgb(255 255 255 / 6%);
+      border: 1px solid rgb(255 255 255 / 12%);
+      border-radius: 6px;
+      padding: 0.55rem 0.6rem;
     }
 
     .bridge-node b {
       display: block;
-      font-family: var(--display);
-      font-size: 1.4rem;
-      line-height: 1;
-      text-transform: uppercase;
+      font-size: 0.82rem;
+      font-weight: 650;
+      line-height: 1.2;
     }
 
     .bridge-node span {
       color: #b9c6b0;
       display: block;
-      font-size: 0.9rem;
-      margin-top: 0.45rem;
+      font-size: 0.72rem;
+      margin-top: 0.2rem;
     }
 
     .arrow {
       color: var(--amber);
       font-family: var(--mono);
-      font-weight: 900;
+      font-size: 0.82rem;
+      font-weight: 700;
     }
 
     .compare {
       border-collapse: collapse;
+      font-size: 0.84rem;
+      margin-top: 0.75rem;
       width: 100%;
     }
 
     .compare th,
     .compare td {
       border-bottom: 1px solid var(--line);
-      padding: 1rem;
+      padding: 0.55rem 0.45rem;
       text-align: left;
       vertical-align: top;
     }
 
     .compare th {
-      background: var(--ink);
-      color: white;
+      color: var(--muted);
       font-family: var(--mono);
-      font-size: 0.78rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
     }
 
     .compare td:first-child {
-      font-weight: 800;
-      width: 28%;
+      color: var(--ink);
+      font-weight: 650;
+      width: 30%;
     }
 
-    .cta {
-      background:
-        linear-gradient(135deg, rgb(0 166 118 / 20%), transparent 38%),
-        linear-gradient(315deg, rgb(245 183 0 / 22%), transparent 35%),
-        var(--ink);
-      color: white;
-      display: grid;
-      gap: 1.4rem;
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: end;
-    }
-
-    .cta p {
-      color: rgb(255 255 255 / 72%);
-      margin: 1rem 0 0;
-      max-width: 48rem;
+    .compare td {
+      color: var(--muted);
+      line-height: 1.45;
     }
 
     .faq-list {
       display: grid;
-      gap: 0.75rem;
-      margin: 0;
+      gap: 0.45rem;
+      margin: 0.75rem 0 0;
       padding: 0;
     }
 
     .faq-item {
       background: var(--sheet);
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 6px;
       padding: 0;
     }
 
     .faq-item summary {
       cursor: pointer;
-      font-family: var(--display);
-      font-size: 1.35rem;
-      font-weight: 700;
-      line-height: 1.1;
+      font-size: 0.88rem;
+      font-weight: 650;
+      line-height: 1.35;
       list-style: none;
-      padding: 1.1rem 1.2rem;
+      padding: 0.65rem 0.75rem;
     }
 
     .faq-item summary::-webkit-details-marker {
@@ -726,7 +676,7 @@
       content: "+";
       float: right;
       font-family: var(--mono);
-      font-size: 1.1rem;
+      font-size: 0.9rem;
       font-weight: 700;
     }
 
@@ -737,40 +687,35 @@
     .faq-item p {
       border-top: 1px solid var(--line);
       color: var(--muted);
+      font-size: 0.84rem;
+      line-height: 1.45;
       margin: 0;
-      padding: 0 1.2rem 1.15rem;
+      padding: 0.55rem 0.75rem 0.65rem;
+    }
+
+    .cta {
+      background: var(--sheet);
+    }
+
+    .cta .lede {
+      margin-top: 0.45rem;
     }
 
     .footer {
       border-top: 1px solid var(--line);
       color: var(--muted);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.8rem 1.4rem;
-      justify-content: space-between;
-      padding: 1.6rem clamp(1rem, 4vw, 3.5rem);
+      font-size: 0.74rem;
+      line-height: 1.45;
+      padding: 0.85rem 0 1.5rem;
+    }
+
+    .footer .column {
+      display: grid;
+      gap: 0.45rem;
     }
 
     .footer-note {
-      flex-basis: 100%;
-      font-size: 0.88rem;
       margin: 0;
-    }
-
-    @media (max-width: 980px) {
-      .section-head,
-      .showcase,
-      .agent-showcase,
-      .gallery-grid,
-      .mockups,
-      .cta {
-        grid-template-columns: 1fr;
-      }
-
-      .feature-grid,
-      .workflow {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
     }
 
     @media (max-width: 680px) {
@@ -779,30 +724,13 @@
         flex-direction: column;
       }
 
-      .hero {
-        background:
-          linear-gradient(180deg, rgb(17 19 16 / 96%) 0%, rgb(17 19 16 / 84%) 58%, rgb(17 19 16 / 42%) 100%),
-          url("assets/dashboard-live.png") center bottom / cover no-repeat,
-          var(--charcoal);
-        min-height: 76svh;
-      }
-
-      .install-strip {
-        grid-template-columns: 1fr;
-      }
-
-      .feature-grid,
-      .workflow {
-        grid-template-columns: 1fr;
-      }
-
       .bridge-lane {
         grid-template-columns: 1fr;
       }
 
       .arrow {
-        transform: rotate(90deg);
         justify-self: center;
+        transform: rotate(90deg);
       }
 
       .compare {
@@ -833,101 +761,84 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="page-title">
-      <div class="hero-inner">
-        <p class="eyebrow">npm project · open-uitester-server</p>
+      <div class="column">
+        <p class="eyebrow">npm · open-uitester-server</p>
         <h1 id="page-title">Open UITester Server</h1>
-        <p class="hero-package">Package name: <code>open-uitester-server</code> on <a href="https://www.npmjs.com/package/open-uitester-server">npm</a></p>
-        <p class="hero-copy"><strong>Open UITester Server</strong> A free, open-source drop-in alternative to the commercial AltTester® Desktop app: WebSocket relay for the AltTester® Unity SDK, with a real-time web dashboard for Node.js and Bun.</p>
+        <p class="hero-tagline">Drop-in WebSocket relay for AltTester® Unity SDK</p>
+        <p class="hero-package">Package: <code>open-uitester-server</code> on <a href="https://www.npmjs.com/package/open-uitester-server">npm</a></p>
+        <p class="hero-copy">Free, open-source alternative to AltTester® Desktop. Run a local relay and browser dashboard on Node.js or Bun — no clone required.</p>
         <div class="actions">
           <a class="button primary" href="#install">Start with npx</a>
-          <a class="button secondary" href="https://github.com/PMelch/open-uitester-server">View GitHub repo</a>
+          <a class="button secondary" href="https://github.com/PMelch/open-uitester-server">GitHub</a>
         </div>
       </div>
     </section>
 
     <aside class="install-strip" id="install" aria-label="Install command">
-      <div>
-        <strong>Run without cloning:</strong>
-        <code id="install-command">npx open-uitester-server</code>
+      <div class="column">
+        <span><strong>Run:</strong> <code id="install-command">npx open-uitester-server</code> <span style="color:var(--muted);font-size:0.76rem">port 13000</span></span>
+        <button class="copy-button" type="button" data-copy-target="install-command">Copy</button>
       </div>
-      <button class="copy-button" type="button" data-copy-target="install-command">Copy command</button>
     </aside>
 
-    <section class="section tight" id="features" aria-labelledby="features-title">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Why it exists</p>
-          <h2 id="features-title">Drop-in alternative to AltTester® Desktop</h2>
-        </div>
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="column">
+        <p class="eyebrow">Why it exists</p>
+        <h2 id="features-title">Drop-in alternative to AltTester® Desktop</h2>
         <p class="lede">The AltTester® Unity SDK is open source. This project replaces the commercial Desktop app’s relay with a drop-in WebSocket server, CLI, and dashboard for normal developer workflows.</p>
-      </div>
 
-      <div class="feature-grid" aria-label="Feature overview">
-        <article class="feature-card" style="--accent: var(--green)">
-          <span class="tag">Protocol</span>
-          <h3>Desktop-compatible bridge</h3>
-          <p>Unity apps connect through <code>/altws/app</code>; test drivers connect through <code>/altws</code>. Messages are routed by app name and driver pairing.</p>
-        </article>
-        <article class="feature-card" style="--accent: var(--amber)">
-          <span class="tag">Runtime</span>
-          <h3>Node.js and Bun support</h3>
-          <p>Use the same package from npm, whether your automation machines standardize on Node.js or Bun.</p>
-        </article>
-        <article class="feature-card" style="--accent: var(--red)">
-          <span class="tag">Visibility</span>
-          <h3>Live dashboard</h3>
-          <p>Inspect connected Unity apps, drivers, pairings, live events, and scene hierarchy from the browser.</p>
-        </article>
-        <article class="feature-card" style="--accent: var(--blue)">
-          <span class="tag">Install</span>
-          <h3>No clone required</h3>
-          <p>Run it directly with <code>npx open-uitester-server</code> or <code>bunx open-uitester-server</code>, then point the SDK at port 13000.</p>
-        </article>
+        <div class="feature-list" aria-label="Feature overview">
+          <article class="feature-item">
+            <h3>Desktop-compatible bridge</h3>
+            <p>Unity apps connect through <code>/altws/app</code>; test drivers connect through <code>/altws</code>. Messages are routed by app name and driver pairing.</p>
+          </article>
+          <article class="feature-item">
+            <h3>Node.js and Bun support</h3>
+            <p>Use the same package from npm, whether your automation machines standardize on Node.js or Bun.</p>
+          </article>
+          <article class="feature-item">
+            <h3>Live dashboard</h3>
+            <p>Inspect connected Unity apps, drivers, pairings, live events, and scene hierarchy from the browser.</p>
+          </article>
+          <article class="feature-item">
+            <h3>No clone required</h3>
+            <p>Run it directly with <code>npx open-uitester-server</code> or <code>bunx open-uitester-server</code>, then point the SDK at port 13000.</p>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section class="section dark" id="dashboard" aria-labelledby="dashboard-title">
-      <div class="showcase">
-        <figure class="screenshot-frame">
+    <section class="section" id="dashboard" aria-labelledby="dashboard-title">
+      <div class="column">
+        <p class="eyebrow">Dashboard preview</p>
+        <h2 id="dashboard-title">UiTester Server dashboard</h2>
+        <p class="lede">The browser dashboard gives local automation runs a live control surface: apps, drivers, routes, events, current scene, loaded scenes, and object tree inspection.</p>
+
+        <figure class="screenshot">
           <img src="assets/dashboard-live.png" alt="Open UITester Server live dashboard with server status, connected Unity apps, connected test drivers, MCP sessions, attention state, and recent events." width="1665" height="826" fetchpriority="high" decoding="async">
+          <figcaption>Live view — apps, drivers, routes, events, and attention state.</figcaption>
         </figure>
-        <div>
-          <p class="eyebrow">Dashboard preview</p>
-          <h2 id="dashboard-title">UiTester Server dashboard</h2>
-          <p class="lede">The browser dashboard gives local automation runs a live control surface: apps, drivers, routes, events, current scene, loaded scenes, and object tree inspection.</p>
-          <div class="metric-stack" aria-label="Dashboard capabilities">
-            <div class="metric">
-              <strong>4</strong>
-              <span>connection counters for apps, drivers, routes, and attention states</span>
-            </div>
-            <div class="metric">
-              <strong>100</strong>
-              <span>recent events retained in the live dashboard log</span>
-            </div>
-            <div class="metric">
-              <strong>1</strong>
-              <span>local server for WebSocket relay and dashboard traffic</span>
-            </div>
-          </div>
+
+        <div class="stat-list" aria-label="Dashboard capabilities">
+          <div class="stat"><strong>4</strong> connection counters for apps, drivers, routes, and attention states</div>
+          <div class="stat"><strong>100</strong> recent events retained in the live dashboard log</div>
+          <div class="stat"><strong>1</strong> local server for WebSocket relay and dashboard traffic</div>
         </div>
       </div>
     </section>
 
     <section class="section" id="agents" aria-labelledby="agents-title">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Agent integrations</p>
-          <h2 id="agents-title">Agent-ready relay</h2>
-        </div>
+      <div class="column">
+        <p class="eyebrow">Agent integrations</p>
+        <h2 id="agents-title">Agent-ready relay</h2>
         <p class="lede">The server exposes a local MCP endpoint for agents that support MCP clients. The GitHub skill bundle is available for agents that prefer local instructions and helper scripts, while MCP remains the shared path for Codex, Claude, Gemini, Cursor, OpenCode, Pi, and other MCP-capable tools.</p>
-      </div>
 
-      <div class="agent-showcase">
-        <figure class="screenshot-frame" style="--screen-ratio: 1657 / 897">
-          <img src="assets/dashboard-mcp.png" alt="Open UITester Server MCP tab showing MCP access policy, enabled apps, tool catalog, enabled agents, and manual MCP configuration snippets." width="1657" height="897">
-          <figcaption class="screenshot-caption">The MCP tab can enable all apps, selected apps, or no app access, then write project or global config for supported agents.</figcaption>
+        <figure class="screenshot">
+          <img src="assets/dashboard-mcp.png" alt="Open UITester Server MCP tab showing MCP access policy, enabled apps, tool catalog, enabled agents, and manual MCP configuration snippets." width="1657" height="897" loading="lazy" decoding="async">
+          <figcaption>MCP tab — enable apps, browse tools, and write agent config.</figcaption>
         </figure>
-        <div class="agent-copy">
+
+        <div class="agent-block">
           <div>
             <h3>Embedded MCP endpoint</h3>
             <p>Start the server and connect any MCP-capable client to the local streamable HTTP endpoint.</p>
@@ -944,165 +855,160 @@ http://127.0.0.1:13000/mcp</pre>
             <p>Codex can install <code>skill/open-uitester-tools/</code> as a skill. Other agents can clone or vendor that folder, read <code>SKILL.md</code>, and call <code>scripts/uitester_tools.mjs</code> directly.</p>
           </div>
         </div>
-      </div>
 
-      <div class="gallery-grid" aria-label="Additional dashboard tabs">
-        <figure class="screenshot-frame" style="--screen-ratio: 1648 / 1007">
-          <img src="assets/dashboard-inspector.png" alt="Inspector tab showing the current scene, loaded scenes, and object tree for a connected Unity app." width="1648" height="1007">
-          <figcaption class="screenshot-caption">Inspector view for scene and hierarchy checks.</figcaption>
+        <figure class="screenshot">
+          <img src="assets/dashboard-inspector.png" alt="Inspector tab showing the current scene, loaded scenes, and object tree for a connected Unity app." width="1648" height="1007" loading="lazy" decoding="async">
+          <figcaption>Inspector — scene and hierarchy checks.</figcaption>
         </figure>
-        <figure class="screenshot-frame" style="--screen-ratio: 1647 / 1002">
-          <img src="assets/dashboard-debug.png" alt="Debug tab showing command events from SDK, MCP, and skill sources with request and response details." width="1647" height="1002">
-          <figcaption class="screenshot-caption">Debug view for driver, MCP, and skill command traces.</figcaption>
+
+        <figure class="screenshot">
+          <img src="assets/dashboard-debug.png" alt="Debug tab showing command events from SDK, MCP, and skill sources with request and response details." width="1647" height="1002" loading="lazy" decoding="async">
+          <figcaption>Debug — driver, MCP, and skill command traces.</figcaption>
         </figure>
       </div>
     </section>
 
     <section class="section" id="workflow" aria-labelledby="workflow-title">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Working model</p>
-          <h2 id="workflow-title">Drop it into existing tests</h2>
-        </div>
+      <div class="column">
+        <p class="eyebrow">Working model</p>
+        <h2 id="workflow-title">Drop it into existing tests</h2>
         <p class="lede">The server is intentionally narrow: it does the WebSocket relay job, exposes enough dashboard visibility to debug runs, and keeps existing driver code intact.</p>
-      </div>
 
-      <div class="workflow" aria-label="Setup workflow">
-        <article class="workflow-step">
-          <span class="number">01</span>
-          <h3>Start server</h3>
-          <p>Run <code>npx open-uitester-server</code>. The CLI starts HTTP and WebSocket handling on port 13000 by default.</p>
-        </article>
-        <article class="workflow-step">
-          <span class="number">02</span>
-          <h3>Point Unity</h3>
-          <p>Configure the AltTester® Unity SDK to use <code>127.0.0.1</code> and the chosen port. Device tests can use the host machine IP.</p>
-        </article>
-        <article class="workflow-step">
-          <span class="number">03</span>
-          <h3>Run drivers</h3>
-          <p>Keep existing Python, C#, Java, or Robot tests. Drivers connect to the server and route commands to the target app.</p>
-        </article>
-      </div>
+        <div class="workflow-list" aria-label="Setup workflow">
+          <article class="workflow-step">
+            <span class="number">01</span>
+            <h3>Start server</h3>
+            <p>Run <code>npx open-uitester-server</code>. The CLI starts HTTP and WebSocket handling on port 13000 by default.</p>
+          </article>
+          <article class="workflow-step">
+            <span class="number">02</span>
+            <h3>Point Unity</h3>
+            <p>Configure the AltTester® Unity SDK to use <code>127.0.0.1</code> and the chosen port. Device tests can use the host machine IP.</p>
+          </article>
+          <article class="workflow-step">
+            <span class="number">03</span>
+            <h3>Run drivers</h3>
+            <p>Keep existing Python, C#, Java, or Robot tests. Drivers connect to the server and route commands to the target app.</p>
+          </article>
+        </div>
 
-      <div class="mockups" aria-label="Product workflow mockups">
-        <div class="terminal">
-          <div class="chrome" aria-hidden="true">
-            <span class="dot"></span>
-            <span class="dot"></span>
-            <span class="dot"></span>
-          </div>
-          <pre><span class="comment"># install-free startup</span>
+        <div class="mockups" aria-label="Product workflow mockups">
+          <div class="terminal">
+            <div class="chrome" aria-hidden="true">
+              <span class="dot"></span>
+              <span class="dot"></span>
+              <span class="dot"></span>
+            </div>
+            <pre><span class="comment"># install-free startup</span>
 npx open-uitester-server
 
 UiTester Server running on port 13000
 Dashboard: http://127.0.0.1:13000/
 Unity apps connect to:  ws://127.0.0.1:13000/altws/app
 Test drivers connect to: ws://127.0.0.1:13000/altws</pre>
-        </div>
-        <div class="bridge" aria-label="WebSocket bridge diagram">
-          <div class="bridge-lane">
-            <div class="bridge-node">
-              <b>Unity app</b>
-              <span>AltTester® SDK</span>
-            </div>
-            <span class="arrow">-&gt;</span>
-            <div class="bridge-node">
-              <b>Server</b>
-              <span>WebSocket relay</span>
-            </div>
-            <span class="arrow">-&gt;</span>
-            <div class="bridge-node">
-              <b>Driver</b>
-              <span>Python / C# / Java / Robot</span>
+          </div>
+          <div class="bridge" aria-label="WebSocket bridge diagram">
+            <div class="bridge-lane">
+              <div class="bridge-node">
+                <b>Unity app</b>
+                <span>AltTester® SDK</span>
+              </div>
+              <span class="arrow">→</span>
+              <div class="bridge-node">
+                <b>Server</b>
+                <span>WebSocket relay</span>
+              </div>
+              <span class="arrow">→</span>
+              <div class="bridge-node">
+                <b>Driver</b>
+                <span>Python / C# / Java / Robot</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section tight" aria-labelledby="fit-title">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Where it fits</p>
-          <h2 id="fit-title">Built for local automation loops</h2>
-        </div>
+    <section class="section" aria-labelledby="fit-title">
+      <div class="column">
+        <p class="eyebrow">Where it fits</p>
+        <h2 id="fit-title">Built for local automation loops</h2>
         <p class="lede">Use Open UITester Server when you need a free relay instead of the commercial AltTester® Desktop app. Use AltTester® Desktop when you need its extended productivity tooling (test recording and more).</p>
-      </div>
 
-      <table class="compare">
-        <thead>
-          <tr>
-            <th>Need</th>
-            <th>Open UITester Server</th>
-            <th>AltTester® Desktop</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>WebSocket relay</td>
-            <td>Open-source relay for SDK apps and test drivers.</td>
-            <td>Official relay bundled with the desktop product.</td>
-          </tr>
-          <tr>
-            <td>Developer dashboard</td>
-            <td>Live local dashboard for connections, routes, events, and inspector data.</td>
-            <td>Desktop UI with additional product features.</td>
-          </tr>
-          <tr>
-            <td>Test recording</td>
-            <td>Not included.</td>
-            <td>Use AltTester® Desktop for recording and advanced workflows.</td>
-          </tr>
-        </tbody>
-      </table>
+        <table class="compare">
+          <thead>
+            <tr>
+              <th>Need</th>
+              <th>Open UITester Server</th>
+              <th>AltTester® Desktop</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>WebSocket relay</td>
+              <td>Open-source relay for SDK apps and test drivers.</td>
+              <td>Official relay bundled with the desktop product.</td>
+            </tr>
+            <tr>
+              <td>Developer dashboard</td>
+              <td>Live local dashboard for connections, routes, events, and inspector data.</td>
+              <td>Desktop UI with additional product features.</td>
+            </tr>
+            <tr>
+              <td>Test recording</td>
+              <td>Not included.</td>
+              <td>Use AltTester® Desktop for recording and advanced workflows.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
-    <section class="section tight" id="faq" aria-labelledby="faq-title">
-      <div class="section-head">
-        <div>
-          <p class="eyebrow">Common questions</p>
-          <h2 id="faq-title">Open UiTester Server FAQ</h2>
-        </div>
-      </div>
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="column">
+        <p class="eyebrow">Common questions</p>
+        <h2 id="faq-title">Open UiTester Server FAQ</h2>
 
-      <div class="faq-list">
-        <details class="faq-item">
-          <summary>What is Open UiTester Server used for?</summary>
-          <p>In typical AltTester® SDK workflows, the AltTester® Desktop app runs a local WebSocket relay between the Unity SDK and your test drivers. Open UiTester Server is a free, open-source drop-in replacement for that commercial Desktop relay, with a real-time web dashboard for Node.js and Bun.</p>
-        </details>
-        <details class="faq-item">
-          <summary>Is Open UiTester Server a full replacement for AltTester® Desktop?</summary>
-          <p>Partly, for the core relay job: Open UiTester Server speaks the same WebSocket protocol as AltTester® Desktop so SDK apps and existing drivers can connect without changes. It does not include commercial Desktop features such as UI test recording.</p>
-        </details>
-        <details class="faq-item">
-          <summary>How do I connect the AltTester® Unity SDK?</summary>
-          <p>Run <code>npx open-uitester-server</code>, then point the SDK at <code>127.0.0.1</code> and port <code>13000</code> (by default). Unity apps use <code>/altws/app</code>; drivers use <code>/altws</code>.</p>
-        </details>
-        <details class="faq-item">
-          <summary>Does it work with Python, C#, Java, and Robot drivers?</summary>
-          <p>Yes. Keep your existing driver tests; they connect to the server and route commands to the target app by name, the same way they would with AltTester® Desktop.</p>
-        </details>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>What is Open UiTester Server used for?</summary>
+            <p>In typical AltTester® SDK workflows, the AltTester® Desktop app runs a local WebSocket relay between the Unity SDK and your test drivers. Open UiTester Server is a free, open-source drop-in replacement for that commercial Desktop relay, with a real-time web dashboard for Node.js and Bun.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Is Open UiTester Server a full replacement for AltTester® Desktop?</summary>
+            <p>Partly, for the core relay job: Open UiTester Server speaks the same WebSocket protocol as AltTester® Desktop so SDK apps and existing drivers can connect without changes. It does not include commercial Desktop features such as UI test recording.</p>
+          </details>
+          <details class="faq-item">
+            <summary>How do I connect the AltTester® Unity SDK?</summary>
+            <p>Run <code>npx open-uitester-server</code>, then point the SDK at <code>127.0.0.1</code> and port <code>13000</code> (by default). Unity apps use <code>/altws/app</code>; drivers use <code>/altws</code>.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Does it work with Python, C#, Java, and Robot drivers?</summary>
+            <p>Yes. Keep your existing driver tests; they connect to the server and route commands to the target app by name, the same way they would with AltTester® Desktop.</p>
+          </details>
+        </div>
       </div>
     </section>
 
     <section class="section cta" aria-labelledby="cta-title">
-      <div>
+      <div class="column">
         <p class="eyebrow">Ready for npm</p>
         <h2 id="cta-title">Run the relay today</h2>
-        <p>Open a terminal, start the server, then point your AltTester® Unity SDK build and driver tests at the same host and port.</p>
-      </div>
-      <div class="actions">
-        <a class="button primary" href="https://www.npmjs.com/package/open-uitester-server">View on npm</a>
-        <a class="button secondary" href="https://github.com/PMelch/open-uitester-server#quick-start-from-npm">Read quick start</a>
+        <p class="lede">Open a terminal, start the server, then point your AltTester® Unity SDK build and driver tests at the same host and port.</p>
+        <div class="actions">
+          <a class="button primary" href="https://www.npmjs.com/package/open-uitester-server">View on npm</a>
+          <a class="button secondary" href="https://github.com/PMelch/open-uitester-server#quick-start-from-npm">Quick start</a>
+        </div>
       </div>
     </section>
   </main>
 
   <footer class="footer">
-    <p class="footer-note">Not affiliated with Altom® (Altom Ky). This project is an independent, open-source drop-in alternative to the commercial AltTester® Desktop app. Official product: <a href="https://alttester.com/">alttester.com</a>.</p>
-    <span>GPL-3.0-only licensed. Built for AltTester® Unity SDK automation workflows.</span>
-    <span><a href="https://github.com/PMelch/open-uitester-server">GitHub</a> / <a href="https://www.npmjs.com/package/open-uitester-server">npm</a> / <a href="https://github.com/alttester/AltTester-Unity-SDK">AltTester® Unity SDK</a></span>
+    <div class="column">
+      <p class="footer-note">Not affiliated with Altom® (Altom Ky). This project is an independent, open-source drop-in alternative to the commercial AltTester® Desktop app. Official product: <a href="https://alttester.com/">alttester.com</a>.</p>
+      <span>GPL-3.0-only licensed. Built for AltTester® Unity SDK automation workflows.</span>
+      <span><a href="https://github.com/PMelch/open-uitester-server">GitHub</a> / <a href="https://www.npmjs.com/package/open-uitester-server">npm</a> / <a href="https://github.com/alttester/AltTester-Unity-SDK">AltTester® Unity SDK</a></span>
+    </div>
   </footer>
 
   <script>
