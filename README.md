@@ -1,6 +1,6 @@
 ![npm version](https://img.shields.io/npm/v/open-uitester-server)
 ![GitHub issues](https://img.shields.io/github/issues-raw/PMelch/open-uitester-server?style=flat-square)
-![GitHub](https://img.shields.io/github/license/PMelch/open-uitester-server?color=%23cccc00&style=flat-square)
+![GitHub](https://img.shields.io/github/license/PMelch/open-uitester-server?style=flat-square)
 
 # Open UITester Server (`open-uitester-server`)
 
