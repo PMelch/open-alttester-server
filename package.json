@@ -1,6 +1,6 @@
 {
   "name": "open-uitester-server",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "Independent, open-source WebSocket relay and dashboard for Node.js and Bun, compatible with the AltTester® SDK (Unity and Unreal).",
   "type": "module",
   "license": "GPL-3.0-only",
