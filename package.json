@@ -1,7 +1,7 @@
 {
   "name": "open-uitester-server",
   "version": "0.7.0",
-  "description": "Free, open-source drop-in alternative to commercial AltTester® Desktop. WebSocket relay for the AltTester® Unity SDK, with a real-time web dashboard for Node.js and Bun.",
+  "description": "Independent, open-source WebSocket relay and dashboard for Node.js and Bun, compatible with the AltTester® SDK (Unity and Unreal).",
   "type": "module",
   "license": "GPL-3.0-only",
   "homepage": "https://pmelch.github.io/open-uitester-server/",

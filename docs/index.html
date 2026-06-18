@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>open-uitester-server | Open UITester Server npm project</title>
-  <meta name="description" content="open-uitester-server: independent drop-in alternative to commercial AltTester® Desktop. Not affiliated with Altom®. Unity SDK WebSocket relay and dashboard for Node.js and Bun.">
+  <meta name="description" content="open-uitester-server: independent WebSocket relay and dashboard compatible with the AltTester® SDK (Unity and Unreal). Not affiliated with Altom®.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#fafbf7">
   <link rel="canonical" href="https://pmelch.github.io/open-uitester-server/">
@@ -12,13 +12,13 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Open UITester Server">
   <meta property="og:title" content="open-uitester-server | Open UITester Server npm project">
-  <meta property="og:description" content="Free, open-source drop-in alternative to commercial AltTester® Desktop. WebSocket relay for the AltTester® Unity SDK, with a real-time web dashboard for Node.js and Bun.">
+  <meta property="og:description" content="Independent, open-source WebSocket relay and dashboard for Node.js and Bun, compatible with the AltTester® SDK (Unity and Unreal).">
   <meta property="og:url" content="https://pmelch.github.io/open-uitester-server/">
   <meta property="og:image" content="https://pmelch.github.io/open-uitester-server/assets/dashboard-live.png">
-  <meta property="og:image:alt" content="Open UITester Server dashboard showing Unity apps, test drivers, MCP sessions, and live events.">
+  <meta property="og:image:alt" content="Open UITester Server dashboard showing connected apps, test drivers, MCP sessions, and live events.">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="open-uitester-server npm project">
-  <meta name="twitter:description" content="open-uitester-server: drop-in alternative to commercial AltTester® Desktop. Not affiliated with Altom®.">
+  <meta name="twitter:description" content="open-uitester-server: independent WebSocket relay compatible with the AltTester® SDK (Unity and Unreal). Not affiliated with Altom®.">
   <meta name="twitter:image" content="https://pmelch.github.io/open-uitester-server/assets/dashboard-live.png">
   <meta name="google-site-verification" content="EPLg7YDIYxOk1gVLec3I3c49Oa-wIgNPkCxIwN7kbW8" />
   <script type="application/ld+json">
@@ -39,7 +39,7 @@
           "installUrl": "https://www.npmjs.com/package/open-uitester-server",
           "applicationCategory": "DeveloperApplication",
           "operatingSystem": "Windows, macOS, Linux",
-          "description": "Free, open-source drop-in alternative to commercial AltTester® Desktop. WebSocket relay for the AltTester® Unity SDK, with a real-time web dashboard for Node.js and Bun. Not affiliated with Altom®.",
+          "description": "Independent, open-source WebSocket relay and dashboard for Node.js and Bun, compatible with the AltTester® SDK (Unity and Unreal). Not affiliated with Altom®.",
           "url": "https://pmelch.github.io/open-uitester-server/",
           "sameAs": [
             "https://github.com/PMelch/open-uitester-server",
@@ -61,26 +61,26 @@
           "mainEntity": [
             {
               "@type": "Question",
-              "name": "What is Open UiTester Server?",
+              "name": "What is Open UITester Server?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Open UITester Server is a free, open-source drop-in replacement for the commercial AltTester® Desktop relay, with a real-time web dashboard for Node.js and Bun. Not affiliated with Altom®."
+                "text": "Open UITester Server is an independent, open-source WebSocket relay with a real-time web dashboard for Node.js and Bun, compatible with the AltTester® SDK (Unity and Unreal)."
               }
             },
             {
               "@type": "Question",
-              "name": "Is Open UITester Server a replacement for AltTester® Desktop?",
+              "name": "How do I connect an instrumented app to Open UITester Server?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Partly, for the core relay job: Open UITester Server speaks the same WebSocket protocol as AltTester® Desktop so SDK apps and existing drivers can connect without changes. It does not include commercial Desktop features such as UI test recording."
+                "text": "Run npx open-uitester-server, then point the AltTester® SDK at the server host and port (127.0.0.1:13000 by default). Instrumented apps use /altws/app; test drivers use /altws."
               }
             },
             {
               "@type": "Question",
-              "name": "How do I connect the AltTester® Unity SDK to Open UITester Server?",
+              "name": "Are there limits on connected instrumented apps?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Run npx open-uitester-server, then point the AltTester® Unity SDK at the server host and port (127.0.0.1:13000 by default). Unity apps use /altws/app; test drivers use /altws."
+                "text": "Open UITester Server does not impose a built-in limit on simultaneous connected apps. Practical limits depend on host machine resources."
               }
             },
             {
@@ -88,7 +88,7 @@
               "name": "Does Open UITester Server work with Python, C#, Java, and Robot drivers?",
               "acceptedAnswer": {
                 "@type": "Answer",
-                "text": "Yes. Existing test drivers connect to the same WebSocket endpoints and route commands by app name, just as they would with AltTester® Desktop."
+                "text": "Yes. Existing test drivers connect to the SDK's standard WebSocket endpoints and route commands by app name."
               }
             }
           ]
@@ -302,6 +302,22 @@
       font-size: 0.9rem;
       line-height: 1.55;
       margin: 0.55rem 0 0;
+    }
+
+    .hero-copy code {
+      background: #eef1ea;
+      border-radius: 5px;
+      font-size: 0.92em;
+      padding: 0.1rem 0.4rem;
+    }
+
+    .hero-disclaimer {
+      border-left: 2px solid var(--line);
+      color: var(--muted);
+      font-size: 0.74rem;
+      line-height: 1.5;
+      margin: 0.75rem 0 0;
+      padding-left: 0.75rem;
     }
 
     .actions {
@@ -644,6 +660,59 @@
       line-height: 1.45;
     }
 
+    .feature-table {
+      border-collapse: collapse;
+      font-size: 0.84rem;
+      margin-top: 0.75rem;
+      width: 100%;
+    }
+
+    .feature-table th,
+    .feature-table td {
+      border-bottom: 1px solid var(--line);
+      padding: 0.55rem 0.45rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .feature-table th {
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .feature-table th:nth-child(2) {
+      text-align: center;
+      width: 5.5rem;
+    }
+
+    .feature-table td:first-child {
+      color: var(--ink);
+      font-weight: 650;
+      width: 28%;
+    }
+
+    .feature-table td.supported {
+      color: var(--green);
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.45;
+      text-align: center;
+      width: 5.5rem;
+    }
+
+    .feature-table td:last-child {
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .feature-table code {
+      font-size: 0.78rem;
+    }
+
     .faq-list {
       display: grid;
       gap: 0.45rem;
@@ -738,6 +807,19 @@
         overflow-x: auto;
         white-space: nowrap;
       }
+
+      .feature-table {
+        display: block;
+        overflow-x: auto;
+      }
+
+      .feature-table thead,
+      .feature-table tbody,
+      .feature-table tr {
+        display: table;
+        table-layout: fixed;
+        width: 100%;
+      }
     }
   </style>
 </head>
@@ -764,9 +846,10 @@
       <div class="column">
         <p class="eyebrow">npm · open-uitester-server</p>
         <h1 id="page-title">Open UITester Server</h1>
-        <p class="hero-tagline">Drop-in WebSocket relay for AltTester® Unity SDK</p>
+        <p class="hero-tagline">WebSocket relay compatible with the AltTester® SDK (Unity and Unreal)</p>
         <p class="hero-package">Package: <code>open-uitester-server</code> on <a href="https://www.npmjs.com/package/open-uitester-server">npm</a></p>
-        <p class="hero-copy">Free, open-source alternative to AltTester® Desktop. Run a local relay and browser dashboard on Node.js or Bun — no clone required.</p>
+        <p class="hero-copy">Run a local relay between instrumented app builds and your test drivers, with a live browser dashboard to inspect connections, routes, and scenes. Start with <code>npx open-uitester-server</code> on Node.js or Bun.</p>
+        <p class="hero-disclaimer"><strong>Disclaimer:</strong> This is an independent, open-source project and is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Altom Consulting, AltTester®, or any of its subsidiaries. All product and company names are trademarks™ or registered® trademarks of their respective holders. Use of them does not imply any affiliation with or endorsement by them.</p>
         <div class="actions">
           <a class="button primary" href="#install">Start with npx</a>
           <a class="button secondary" href="https://github.com/PMelch/open-uitester-server">GitHub</a>
@@ -776,35 +859,68 @@
 
     <aside class="install-strip" id="install" aria-label="Install command">
       <div class="column">
-        <span><strong>Run:</strong> <code id="install-command">npx open-uitester-server</code> <span style="color:var(--muted);font-size:0.76rem">port 13000</span></span>
+        <span><strong>Run:</strong> <code id="install-command">npx open-uitester-server</code> <span style="color:var(--muted);font-size:0.76rem">(listens on port 13000 by default)</span></span>
         <button class="copy-button" type="button" data-copy-target="install-command">Copy</button>
       </div>
     </aside>
 
     <section class="section" id="features" aria-labelledby="features-title">
       <div class="column">
-        <p class="eyebrow">Why it exists</p>
-        <h2 id="features-title">Drop-in alternative to AltTester® Desktop</h2>
-        <p class="lede">The AltTester® Unity SDK is open source. This project replaces the commercial Desktop app’s relay with a drop-in WebSocket server, CLI, and dashboard for normal developer workflows.</p>
+        <p class="eyebrow">Overview</p>
+        <h2 id="features-title">Open UITester Server capabilities</h2>
+        <p class="lede">The AltTester® SDK supports Unity and Unreal applications. Open UITester Server is an independent, open-source WebSocket server, CLI, and dashboard for local SDK-based automation workflows.</p>
 
-        <div class="feature-list" aria-label="Feature overview">
-          <article class="feature-item">
-            <h3>Desktop-compatible bridge</h3>
-            <p>Unity apps connect through <code>/altws/app</code>; test drivers connect through <code>/altws</code>. Messages are routed by app name and driver pairing.</p>
-          </article>
-          <article class="feature-item">
-            <h3>Node.js and Bun support</h3>
-            <p>Use the same package from npm, whether your automation machines standardize on Node.js or Bun.</p>
-          </article>
-          <article class="feature-item">
-            <h3>Live dashboard</h3>
-            <p>Inspect connected Unity apps, drivers, pairings, live events, and scene hierarchy from the browser.</p>
-          </article>
-          <article class="feature-item">
-            <h3>No clone required</h3>
-            <p>Run it directly with <code>npx open-uitester-server</code> or <code>bunx open-uitester-server</code>, then point the SDK at port 13000.</p>
-          </article>
-        </div>
+        <table class="feature-table" aria-label="Open UITester Server capabilities">
+          <thead>
+            <tr>
+              <th scope="col">Feature</th>
+              <th scope="col">Supported</th>
+              <th scope="col">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>SDK-compatible WebSocket relay</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Implements the protocol used by AltTester® SDK clients. Instrumented apps connect through <code>/altws/app</code>; test drivers connect through <code>/altws</code>. Messages are routed by app name and driver pairing.</td>
+            </tr>
+            <tr>
+              <td>Node.js and Bun support</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Use the same package from npm, whether your automation machines standardize on Node.js or Bun.</td>
+            </tr>
+            <tr>
+              <td>Live dashboard</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Inspect connected instrumented apps, drivers, pairings, live events, and scene hierarchy from the browser.</td>
+            </tr>
+            <tr>
+              <td>No built-in connection limit</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Connect as many instrumented apps as your host machine can support. Capacity depends on CPU, memory, and network resources — not a server-side cap.</td>
+            </tr>
+            <tr>
+              <td>No install required</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Run directly with <code>npx open-uitester-server</code> or <code>bunx open-uitester-server</code>, then point the SDK at port 13000.</td>
+            </tr>
+            <tr>
+              <td>Embedded MCP server</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Expose a local MCP endpoint for Codex, Claude, Gemini, Cursor, OpenCode, Pi, and other MCP-capable agents. Enable per app from the CLI or dashboard.</td>
+            </tr>
+            <tr>
+              <td>GitHub skill bundle</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>Use <code>skill/open-uitester-tools/</code> for the same operations without MCP configuration. Install as a Codex skill, or clone and run <code>scripts/uitester_tools.mjs</code> from any agent workflow.</td>
+            </tr>
+            <tr>
+              <td>Open source</td>
+              <td class="supported" aria-label="Supported">✓</td>
+              <td>GPL-3.0-only licensed. Run from npm with Node.js or Bun, inspect the code on GitHub, and adapt it to your automation setup.</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -815,7 +931,7 @@
         <p class="lede">The browser dashboard gives local automation runs a live control surface: apps, drivers, routes, events, current scene, loaded scenes, and object tree inspection.</p>
 
         <figure class="screenshot">
-          <img src="assets/dashboard-live.png" alt="Open UITester Server live dashboard with server status, connected Unity apps, connected test drivers, MCP sessions, attention state, and recent events." width="1665" height="826" fetchpriority="high" decoding="async">
+          <img src="assets/dashboard-live.png" alt="Open UITester Server live dashboard with server status, connected instrumented apps, connected test drivers, MCP sessions, attention state, and recent events." width="1665" height="826" fetchpriority="high" decoding="async">
           <figcaption>Live view — apps, drivers, routes, events, and attention state.</figcaption>
         </figure>
 
@@ -857,7 +973,7 @@ http://127.0.0.1:13000/mcp</pre>
         </div>
 
         <figure class="screenshot">
-          <img src="assets/dashboard-inspector.png" alt="Inspector tab showing the current scene, loaded scenes, and object tree for a connected Unity app." width="1648" height="1007" loading="lazy" decoding="async">
+          <img src="assets/dashboard-inspector.png" alt="Inspector tab showing the current scene, loaded scenes, and object tree for a connected instrumented app." width="1648" height="1007" loading="lazy" decoding="async">
           <figcaption>Inspector — scene and hierarchy checks.</figcaption>
         </figure>
 
@@ -871,7 +987,7 @@ http://127.0.0.1:13000/mcp</pre>
     <section class="section" id="workflow" aria-labelledby="workflow-title">
       <div class="column">
         <p class="eyebrow">Working model</p>
-        <h2 id="workflow-title">Drop it into existing tests</h2>
+        <h2 id="workflow-title">Use with existing tests</h2>
         <p class="lede">The server is intentionally narrow: it does the WebSocket relay job, exposes enough dashboard visibility to debug runs, and keeps existing driver code intact.</p>
 
         <div class="workflow-list" aria-label="Setup workflow">
@@ -882,8 +998,8 @@ http://127.0.0.1:13000/mcp</pre>
           </article>
           <article class="workflow-step">
             <span class="number">02</span>
-            <h3>Point Unity</h3>
-            <p>Configure the AltTester® Unity SDK to use <code>127.0.0.1</code> and the chosen port. Device tests can use the host machine IP.</p>
+            <h3>Configure instrumented app</h3>
+            <p>Configure the AltTester® SDK in your Unity or Unreal build to use <code>127.0.0.1</code> and the chosen port. Device tests can use the host machine IP.</p>
           </article>
           <article class="workflow-step">
             <span class="number">03</span>
@@ -904,13 +1020,13 @@ npx open-uitester-server
 
 UiTester Server running on port 13000
 Dashboard: http://127.0.0.1:13000/
-Unity apps connect to:  ws://127.0.0.1:13000/altws/app
+Apps connect to:  ws://127.0.0.1:13000/altws/app
 Test drivers connect to: ws://127.0.0.1:13000/altws</pre>
           </div>
           <div class="bridge" aria-label="WebSocket bridge diagram">
             <div class="bridge-lane">
               <div class="bridge-node">
-                <b>Unity app</b>
+                <b>Instrumented app</b>
                 <span>AltTester® SDK</span>
               </div>
               <span class="arrow">→</span>
@@ -929,41 +1045,6 @@ Test drivers connect to: ws://127.0.0.1:13000/altws</pre>
       </div>
     </section>
 
-    <section class="section" aria-labelledby="fit-title">
-      <div class="column">
-        <p class="eyebrow">Where it fits</p>
-        <h2 id="fit-title">Built for local automation loops</h2>
-        <p class="lede">Use Open UITester Server when you need a free relay instead of the commercial AltTester® Desktop app. Use AltTester® Desktop when you need its extended productivity tooling (test recording and more).</p>
-
-        <table class="compare">
-          <thead>
-            <tr>
-              <th>Need</th>
-              <th>Open UITester Server</th>
-              <th>AltTester® Desktop</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>WebSocket relay</td>
-              <td>Open-source relay for SDK apps and test drivers.</td>
-              <td>Official relay bundled with the desktop product.</td>
-            </tr>
-            <tr>
-              <td>Developer dashboard</td>
-              <td>Live local dashboard for connections, routes, events, and inspector data.</td>
-              <td>Desktop UI with additional product features.</td>
-            </tr>
-            <tr>
-              <td>Test recording</td>
-              <td>Not included.</td>
-              <td>Use AltTester® Desktop for recording and advanced workflows.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
     <section class="section" id="faq" aria-labelledby="faq-title">
       <div class="column">
         <p class="eyebrow">Common questions</p>
@@ -971,20 +1052,20 @@ Test drivers connect to: ws://127.0.0.1:13000/altws</pre>
 
         <div class="faq-list">
           <details class="faq-item">
-            <summary>What is Open UiTester Server used for?</summary>
-            <p>In typical AltTester® SDK workflows, the AltTester® Desktop app runs a local WebSocket relay between the Unity SDK and your test drivers. Open UiTester Server is a free, open-source drop-in replacement for that commercial Desktop relay, with a real-time web dashboard for Node.js and Bun.</p>
+            <summary>What is Open UITester Server?</summary>
+            <p>Open UITester Server is an independent, open-source WebSocket relay with a real-time web dashboard for Node.js and Bun. It implements the protocol used by AltTester® SDK clients to connect instrumented app builds and test drivers.</p>
           </details>
           <details class="faq-item">
-            <summary>Is Open UiTester Server a full replacement for AltTester® Desktop?</summary>
-            <p>Partly, for the core relay job: Open UiTester Server speaks the same WebSocket protocol as AltTester® Desktop so SDK apps and existing drivers can connect without changes. It does not include commercial Desktop features such as UI test recording.</p>
+            <summary>Are there limits on connected instrumented apps?</summary>
+            <p>Open UITester Server does not impose a built-in limit on simultaneous connected apps. Practical limits depend on your machine's CPU, memory, and network resources.</p>
           </details>
           <details class="faq-item">
-            <summary>How do I connect the AltTester® Unity SDK?</summary>
-            <p>Run <code>npx open-uitester-server</code>, then point the SDK at <code>127.0.0.1</code> and port <code>13000</code> (by default). Unity apps use <code>/altws/app</code>; drivers use <code>/altws</code>.</p>
+            <summary>How do I connect an instrumented app?</summary>
+            <p>Run <code>npx open-uitester-server</code>, then point the AltTester® SDK at <code>127.0.0.1</code> and port <code>13000</code> (by default). Instrumented apps use <code>/altws/app</code>; drivers use <code>/altws</code>.</p>
           </details>
           <details class="faq-item">
             <summary>Does it work with Python, C#, Java, and Robot drivers?</summary>
-            <p>Yes. Keep your existing driver tests; they connect to the server and route commands to the target app by name, the same way they would with AltTester® Desktop.</p>
+            <p>Yes. Keep your existing driver tests; they connect to the server using the SDK's standard WebSocket endpoints and route commands to the target app by name.</p>
           </details>
         </div>
       </div>
@@ -994,7 +1075,7 @@ Test drivers connect to: ws://127.0.0.1:13000/altws</pre>
       <div class="column">
         <p class="eyebrow">Ready for npm</p>
         <h2 id="cta-title">Run the relay today</h2>
-        <p class="lede">Open a terminal, start the server, then point your AltTester® Unity SDK build and driver tests at the same host and port.</p>
+        <p class="lede">Open a terminal, start the server, then point your AltTester® SDK instrumented build and driver tests at the same host and port.</p>
         <div class="actions">
           <a class="button primary" href="https://www.npmjs.com/package/open-uitester-server">View on npm</a>
           <a class="button secondary" href="https://github.com/PMelch/open-uitester-server#quick-start-from-npm">Quick start</a>
@@ -1005,9 +1086,9 @@ Test drivers connect to: ws://127.0.0.1:13000/altws</pre>
 
   <footer class="footer">
     <div class="column">
-      <p class="footer-note">Not affiliated with Altom® (Altom Ky). This project is an independent, open-source drop-in alternative to the commercial AltTester® Desktop app. Official product: <a href="https://alttester.com/">alttester.com</a>.</p>
-      <span>GPL-3.0-only licensed. Built for AltTester® Unity SDK automation workflows.</span>
-      <span><a href="https://github.com/PMelch/open-uitester-server">GitHub</a> / <a href="https://www.npmjs.com/package/open-uitester-server">npm</a> / <a href="https://github.com/alttester/AltTester-Unity-SDK">AltTester® Unity SDK</a></span>
+      <p class="footer-note">AltTester® is a trademark of Altom — see <a href="https://alttester.com/">alttester.com</a>.</p>
+      <span>GPL-3.0-only licensed. Built for AltTester® SDK automation workflows (Unity and Unreal).</span>
+      <span><a href="https://github.com/PMelch/open-uitester-server">GitHub</a> / <a href="https://www.npmjs.com/package/open-uitester-server">npm</a> / <a href="https://github.com/alttester/AltTester-Unity-SDK">AltTester® Unity SDK</a> / <a href="https://alttester.com/docs/unreal-sdk/latest/">AltTester® Unreal SDK</a></span>
     </div>
   </footer>
 

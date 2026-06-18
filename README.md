@@ -4,19 +4,19 @@
 
 # Open UITester Server (`open-uitester-server`)
 
-Free, open-source drop-in alternative to the commercial **AltTester® Desktop** app. WebSocket relay for the AltTester® Unity SDK, with a real-time web dashboard for Node.js and Bun.
-
-Not affiliated with Altom® (Altom Ky). Official products: [alttester.com](https://alttester.com/).
+Independent, open-source WebSocket relay and dashboard for Node.js and Bun, compatible with the AltTester® SDK (Unity and Unreal).
 
 [Project website](https://pmelch.github.io/open-uitester-server/) · [npm package](https://www.npmjs.com/package/open-uitester-server)
 
-## Why this project exists
+> **Disclaimer:** This is an independent, open-source project and is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Altom Consulting, AltTester®, or any of its subsidiaries. All product and company names are trademarks™ or registered® trademarks of their respective holders. Use of them does not imply any affiliation with or endorsement by them. AltTester® is a trademark of Altom — see [alttester.com](https://alttester.com/).
 
-The [AltTester® Unity SDK](https://github.com/alttester/AltTester-Unity-SDK) is open source (GPL v3), but the **AltTester® Desktop** app — which acts as the relay between the SDK running in your Unity app and your test drivers — is a commercial, closed-source product.
+## Overview
 
-This project is a free, open-source drop-in alternative to that Desktop app: a WebSocket server that speaks the same protocol, so you can run Unity SDK UI automation end to end without a commercial Desktop license. The Unity SDK and your existing Python/C#/Java/Robot test drivers connect to this server exactly the way they would connect to AltTester® Desktop.
+The AltTester® SDK supports UI test automation for Unity and Unreal applications. SDK-based workflows use a local WebSocket relay between instrumented app builds and test drivers.
 
-If you need the extended features that ship with the commercial Desktop app — such as UI test recording and other productivity tooling — please consider purchasing an AltTester® Desktop license to support the upstream project.
+Open UITester Server provides an independent server implementation for that workflow: a WebSocket server that implements the protocol used by AltTester® SDK clients. Teams can run end-to-end UI automation with existing Python/C#/Java/Robot test drivers pointed at the server's host and port.
+
+Open UITester Server does not impose a built-in limit on how many instrumented apps can connect at the same time. Practical capacity depends on your host machine's CPU, memory, and network resources.
 
 ## Requirements
 
@@ -31,7 +31,7 @@ Both runtimes are fully supported. The server auto-detects the runtime at startu
 
 ## Quick start (from npm)
 
-No clone required — run directly with **npm / npx**:
+No install required — run directly with **npm / npx**:
 
 ```bash
 npx open-uitester-server
@@ -67,43 +67,17 @@ open-uitester-server --mcp-all
 # One or more named apps (repeat --mcp-app)
 open-uitester-server --mcp-app MyUnityGame
 
-# Or via environment (also works with npm start / bun run dev)
+# Or via environment
 ALTSERVER_MCP_ALL=1 open-uitester-server
 ALTSERVER_MCP_APP=MyUnityGame,OtherGame open-uitester-server
 ```
 
----
-
-## From source
-
-### Install
-
-```bash
-# Node.js
-npm install
-
-# Bun
-bun install
-```
-
-### Start
-
-```bash
-# Node.js
-npm start            # uses tsx
-
-# Bun (faster startup)
-npm run start:bun    # uses bun directly
-# or
-bun run start:bun
-```
-
-The server starts on port **13000** by default and prints:
+The server listens on port **13000** by default and prints:
 
 ```
 UiTester Server running on port 13000
 Dashboard: http://127.0.0.1:13000/
-Unity apps connect to:  ws://127.0.0.1:13000/altws/app
+Apps connect to:  ws://127.0.0.1:13000/altws/app
 Test drivers connect to: ws://127.0.0.1:13000/altws
 Press Ctrl+C to stop.
 ```
@@ -130,23 +104,11 @@ python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-githu
 
 Restart Codex after installing the skill. For other agents, clone or vendor `skill/open-uitester-tools/` from this repo and use its `SKILL.md` plus `scripts/uitester_tools.mjs`. See [docs/agents.md](./docs/agents.md) for manual MCP config examples, dashboard auto-setup targets, and skill details.
 
-### Custom port
-
-```bash
-ALTSERVER_PORT=9000 npm start
-```
-
-### Development (auto-restart on file changes)
-
-```bash
-bun run dev
-```
-
 ## Stop
 
 Press **Ctrl+C** in the terminal. The server handles `SIGINT` and `SIGTERM` for clean shutdown.
 
-## Unity SDK setup
+## Instrumented app setup
 
 | SDK field | Value |
 |-----------|-------|
@@ -167,46 +129,6 @@ driver = AltDriver()          # defaults: host=127.0.0.1, port=13000
 driver = AltDriver(host="127.0.0.1", port=9000)  # custom port
 ```
 
-## Testing the CLI locally (before publishing)
-
-**Node.js** — use `npm link`:
-
-```bash
-npm install
-npm link
-
-# Now test as if installed from npm:
-open-uitester-server
-open-uitester-server --port 9000
-
-npm unlink open-uitester-server
-```
-
-**Bun** — use `bun link`:
-
-```bash
-bun link
-
-bunx open-uitester-server
-bunx open-uitester-server --port 9000
-
-bun unlink open-uitester-server
-```
-
----
-
-## Tests
-
-```bash
-# Node.js
-npm test                  # vitest (recommended for CI)
-
-# Bun
-npm run test:bun          # bun test
-npm run test:bun:watch    # re-run on file changes
-npm run test:bun:coverage # with coverage report
-```
-
 ## Environment variables
 
 | Variable | Default | Description |
@@ -214,6 +136,10 @@ npm run test:bun:coverage # with coverage report
 | `ALTSERVER_PORT` | `13000` | Port for both the WebSocket server and HTTP dashboard |
 | `ALTSERVER_MCP_ALL` | _(unset)_ | Set to `1` / `true` to enable MCP for all apps at startup |
 | `ALTSERVER_MCP_APP` | _(unset)_ | Comma-separated app names for MCP access at startup |
+
+## Contributing
+
+Clone, build, test, and development workflow: [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Changelog
 
